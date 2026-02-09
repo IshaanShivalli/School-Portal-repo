@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>Send Circulars</h1>
+
+{% if success %}
+    <p class="message-success">{{ success }}</p>
+{% endif %}
+{% if error %}
+    <p class="message-error">{{ error }}</p>
+{% endif %}
+
+<form method="post" class="send-request-container" enctype="multipart/form-data">
+    <label>Grades:</label>
+    <div class="grade-filters">
+        {% for g in grades %}
+            <label><input type="checkbox" name="grades" value="{{ g.grade }}"> {{ g.grade }}</label>
+        {% endfor %}
+    </div>
+    <input type="text" name="title" placeholder="Circular title" required><br><br>
+    <textarea name="body" placeholder="Write the circular here" required></textarea><br><br>
+    <input type="file" name="attachment"><br><br>
+    <button type="submit">Send Circular</button>
+</form>
+
+<h2>Your Circulars</h2>
+<table class="grades-table">
+    <thead>
+        <tr>
+            <th>Grade</th>
+            <th>Title</th>
+            <th>Date</th>
+            <th>Attachment</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in circulars %}
+        <tr>
+            <td>{{ c.grade }}</td>
+            <td>{{ c.title }}</td>
+            <td>{{ c.created_at }}</td>
+            <td>
+                {% if c.attachment %}
+                    <a href="{{ url_for('static', filename=c.attachment) }}">Download</a>
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

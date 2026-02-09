@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+{% block body %}
+<h2>Admin Inbox</h2>
+{% for m in messages %}
+<p><b>{{ m.sender }}</b>: {{ m.message }}</p>
+{% endfor %}
+<form method="post" action="{{ url_for('admin_clear_inbox') }}">
+    <button type="submit" style="margin-bottom:10px;">Clear Inbox</button>
+</form>
+
+{% endblock %}

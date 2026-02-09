@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<h1>Send Message to Teacher</h1>
+
+{% if success %}
+    <p class="message-success">{{ success }}</p>
+{% endif %}
+{% if error %}
+    <p class="message-error">{{ error }}</p>
+{% endif %}
+
+<form method="post" class="send-request-container">
+    <textarea name="message" placeholder="Write your message here" required></textarea><br>
+    <button type="submit">Send</button>
+</form>
+{% endblock %}

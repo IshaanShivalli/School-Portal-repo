@@ -1,0 +1,14 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<div class="listing-container">
+    <h2>Welcome to the Dashboard</h2>
+    {% if session['role'] == 'admin' %}
+        <a href="{{ url_for('admin_dashboard') }}" class="admin_messages">Go to Admin Dashboard</a>
+    {% elif session['role'] == 'teacher' %}
+        <a href="{{ url_for('teacher_dashboard') }}" class="send_request">Go to Teacher Dashboard</a>
+    {% elif session['role'] == 'student' %}
+        <a href="{{ url_for('student_dashboard') }}" class="send_request">Go to Student Dashboard</a>
+    {% endif %}
+</div>
+{% endblock %}

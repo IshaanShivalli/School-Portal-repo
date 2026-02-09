@@ -1,0 +1,111 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<h1>Broadcast Messages<img src="{{ url_for('static', filename='email.png') }}" alt="Home" style = "height:45px; margin-left: 50px"> </h1>
+
+{% if success %}
+    <p class="message-success">{{ success }}</p>
+{% endif %}
+{% if error %}
+    <p class="message-error">{{ error }}</p>
+{% endif %}
+
+<form method="post" class="send-request-container">
+    <input type="hidden" name="target" value="students">
+    <label>Grades (Students):</label>
+    <div class="grade-filters">
+        <label><input type="checkbox" name="grades" value="ALL"> All Students</label>
+        {% for g in grades %}
+            <label><input type="checkbox" name="grades" value="{{ g.grade }}"> {{ g.grade }}</label>
+        {% endfor %}
+    </div>
+
+    <textarea name="message" placeholder="Write your message here" required></textarea><br><br>
+    <button type="submit">Send to Students</button>
+</form>
+
+<form method="post" class="send-request-container" enctype="multipart/form-data">
+    <input type="hidden" name="target" value="admin_circular">
+    <label>Circulars (Admin):</label>
+    <div class="grade-filters">
+        {% for g in grades %}
+            <label><input type="checkbox" name="grades" value="{{ g.grade }}"> {{ g.grade }}</label>
+        {% endfor %}
+    </div>
+    <input type="text" name="title" placeholder="Circular title" required><br><br>
+    <textarea name="body" placeholder="Write the circular here" required></textarea><br><br>
+    <input type="file" name="attachment"><br><br>
+    <button type="submit">Send Circular</button>
+</form>
+
+<form method="post" class="send-request-container" enctype="multipart/form-data">
+    <input type="hidden" name="target" value="news">
+    <label>School News (Admin):</label><br><br>
+    <input type="text" name="title" placeholder="News title" required><br><br>
+    <textarea name="body" placeholder="Write the news here" required></textarea><br><br>
+    <input type="file" name="attachment"><br><br>
+    <button type="submit">Post News</button>
+</form>
+
+<form method="post" class="send-request-container">
+    <input type="hidden" name="target" value="teachers">
+    <label>Teachers:</label>
+    <div class="grade-filters">
+        <label><input type="checkbox" name="teachers" value="ALL"> All Teachers</label>
+        {% for t in teachers %}
+            <label><input type="checkbox" name="teachers" value="{{ t.id }}"> {{ t.username }}</label>
+        {% endfor %}
+    </div>
+
+    <textarea name="message" placeholder="Write your message here" required></textarea><br><br>
+    <button type="submit">Send to Teachers</button>
+</form>
+
+{% if news %}
+<h2>Recent School News</h2>
+<table class="grades-table">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Posted By</th>
+            <th>Date</th>
+            <th>Attachment</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for n in news %}
+        <tr>
+            <td>{{ n.title }}</td>
+            <td>{{ n.sender }}</td>
+            <td>{{ n.created_at }}</td>
+            <td>
+                {% if n.attachment %}
+                    <a href="{{ url_for('static', filename=n.attachment) }}">Download</a>
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+<h2>All Students</h2>
+<table class="grades-table">
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Grade</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in students %}
+        <tr>
+            <td>{{ s.username }}</td>
+            <td>{{ s.grade }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

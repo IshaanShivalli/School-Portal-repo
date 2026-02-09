@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>Homework (Grade {{ grade }})</h1>
+
+<div class="message-container">
+    {% if homework %}
+        {% for h in homework %}
+            <div class="message-item" style="align-items:flex-start;">
+                <div>
+                    <p><b>{{ h.title }}</b></p>
+                    <p>{{ h.body }}</p>
+                    <p style="font-size:0.85rem;">Posted by {{ h.sender }} on {{ h.created_at }}</p>
+                    {% if h.attachment %}
+                        <a href="{{ url_for('static', filename=h.attachment) }}">Download attachment</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No homework available for your grade.</p>
+    {% endif %}
+</div>
+{% endblock %}

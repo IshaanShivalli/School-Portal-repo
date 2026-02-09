@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>Send Homework</h1>
+
+{% if success %}
+    <p class="message-success">{{ success }}</p>
+{% endif %}
+{% if error %}
+    <p class="message-error">{{ error }}</p>
+{% endif %}
+
+<form method="post" class="send-request-container" enctype="multipart/form-data">
+    <label>Grades:</label>
+    <div class="grade-filters">
+        {% for g in grades %}
+            <label><input type="checkbox" name="grades" value="{{ g.grade }}"> {{ g.grade }}</label>
+        {% endfor %}
+    </div>
+    <input type="text" name="title" placeholder="Homework title" required><br><br>
+    <textarea name="body" placeholder="Write the homework here" required></textarea><br><br>
+    <input type="file" name="attachment"><br><br>
+    <button type="submit">Send Homework</button>
+</form>
+
+<h2>Your Homework</h2>
+<table class="grades-table">
+    <thead>
+        <tr>
+            <th>Grade</th>
+            <th>Title</th>
+            <th>Date</th>
+            <th>Attachment</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for h in homework %}
+        <tr>
+            <td>{{ h.grade }}</td>
+            <td>{{ h.title }}</td>
+            <td>{{ h.created_at }}</td>
+            <td>
+                {% if h.attachment %}
+                    <a href="{{ url_for('static', filename=h.attachment) }}">Download</a>
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

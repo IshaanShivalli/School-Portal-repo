@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<h1>Message Admin</h1>
+
+{% if success %}
+<p class="message-success">{{ success }}</p>
+{% endif %}
+{% if error %}
+<p class="message-error">{{ error }}</p>
+{% endif %}
+
+<form method="post">
+    <textarea name="message" rows="5" cols="50" required></textarea><br><br>
+    <button type="submit">Send to Admin</button>
+</form>
+
+<a href="{{ url_for('home') }}" class="return">Back</a>
+{% endblock %}

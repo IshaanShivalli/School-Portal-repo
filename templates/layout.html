@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body data-has-user="{{ '1' if session.get('user_id') else '0' }}" data-ping-url="{{ url_for('ping') }}">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                {% if session.get('user_id') %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('home') }}"><img class="nav-icon" src="{{ url_for('static', filename='home (1).png') }}" alt="Home"></a>
+                </li>
+                {% endif %}
+                {% if session['role'] == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}"><img class="nav-icon" src="{{ url_for('static', filename='admin.png') }}" alt="Admin"></a>
+                    </li>
+                {% endif %}
+                {% if session['role'] == 'student' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('student_inbox') }}"><img class="nav-icon" src="{{ url_for('static', filename='mail.png') }}" alt="Inbox"></a>
+                    </li>
+                {% elif session['role'] == 'teacher' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('teacher_messages') }}"><img class="nav-icon" src="{{ url_for('static', filename='mail.png') }}" alt="Inbox"></a>
+                    </li>
+                {% elif session['role'] == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_messages') }}"><img class="nav-icon" src="{{ url_for('static', filename='mail.png') }}" alt="Inbox"></a>
+                    </li>
+                {% endif %}
+                {% if session.get('user_id') %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('logout') }}"><img class="nav-icon" src="{{ url_for('static', filename='logout.png') }}" alt="Logout"></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('settings') }}"><img class="nav-icon" src="{{ url_for('static', filename='settings.png') }}" alt="Settings"></a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+        {% if session.get('username') %}
+        <span class="navbar-text" style="margin-right:10px;">
+            Logged in as: {{ session['username'] }}
+        </span>
+        {% endif %}
+        <button class="btn btn-outline-dark" id="theme-toggle">Toggle Dark Mode</button>
+    </nav>
+
+    {% block body %}
+    {% endblock %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const themeToggleButton = document.getElementById('theme-toggle');
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        const hasUser = document.body.dataset.hasUser === "1";
+        const pingUrl = document.body.dataset.pingUrl;
+
+        if (currentTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+
+        themeToggleButton.addEventListener('click', () => {
+            if (document.body.classList.contains('dark-mode')) {
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        if (hasUser) {
+            // Keep user presence updated
+            const ping = () => fetch(pingUrl, { method: "GET" }).catch(() => {});
+            ping();
+            setInterval(ping, 60000);
+        }
+    </script>
+</body>
+</html>

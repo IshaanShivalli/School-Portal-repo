@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>School News</h1>
+
+<div class="message-container">
+    {% if news %}
+        {% for n in news %}
+            <div class="message-item" style="align-items:flex-start;">
+                <div>
+                    <p><b>{{ n.title }}</b></p>
+                    <p>{{ n.body }}</p>
+                    <p style="font-size:0.85rem;">Posted by {{ n.sender }} on {{ n.created_at }}</p>
+                    {% if n.attachment %}
+                        <a href="{{ url_for('static', filename=n.attachment) }}">Download attachment</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No news posted yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

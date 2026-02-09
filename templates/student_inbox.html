@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<h1>Inbox</h1>
+
+{% if messages %}
+<table class="messages-table">
+    <tr>
+        <th>From</th>
+        <th>Message</th>
+        <th>Time</th>
+    </tr>
+    {% for m in messages %}
+    <tr>
+        <td>{{ m.sender }}</td>
+        <td>{{ m.message }}</td>
+        <td>{{ m.created_at }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No messages yet.</p>
+{% endif %}
+<form method="post" action="{{ url_for('clear_inbox') }}">
+    <button type="submit" style="margin-bottom:10px;">Clear Inbox</button>
+</form>
+{% endblock %}

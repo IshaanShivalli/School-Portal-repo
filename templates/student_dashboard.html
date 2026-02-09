@@ -1,0 +1,101 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<h1>Student Dashboard</h1>
+
+{% if error %}
+    <p style="color:red">{{ error }}</p>
+{% endif %}
+{% if message %}
+    <p style="color:green">{{ message }}</p>
+{% endif %}
+
+{% if not info_submitted %}
+<div class="send-request-container">
+    <h2>Student Information</h2>
+    <form method="post">
+        <label>Name</label><br>
+        <input type="text" name="name" value="{{ name_prefill }}" readonly><br><br>
+
+        <label>Grade</label><br>
+        <input type="text" name="grade" required><br><br>
+
+        <label>Section</label><br>
+        <input type="text" name="section" required><br><br>
+
+        <label>DOB</label><br>
+        <input type="date" name="dob" required><br><br>
+
+        <button type="submit">Submit</button>
+    </form>
+</div>
+{% else %}
+<div class="names-list-container">
+    <h2>Messages</h2>
+    <div class="admin-actions">
+        <a href="{{ url_for('send_request') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='email.png') }}" alt="Message Teacher">
+            <span>Message Teacher{% if counts %} <span class="link-badge">Sent {{ counts.sent_total }}</span>{% endif %}</span>
+        </a>
+        <a href="{{ url_for('student_inbox') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='mail.png') }}" alt="Inbox">
+            <span>View Inbox{% if counts %} <span class="link-badge">Unread {{ counts.inbox_unread }}</span><span class="link-badge alt">Recv {{ counts.inbox_total }}</span>{% endif %}</span>
+        </a>
+    </div>
+</div>
+
+<div class="names-list-container">
+    <h2>Student Resources</h2>
+    <div class="admin-actions">
+        <a href="{{ url_for('student_circulars') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='list.png') }}" alt="Circulars">
+            <span>Circulars{% if counts %} <span class="link-badge">Unread {{ counts.circulars_unread }}</span><span class="link-badge alt">Recv {{ counts.circulars_total }}</span>{% endif %}</span>
+        </a>
+        <a href="{{ url_for('school_news') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='comments.png') }}" alt="School News">
+            <span>School News{% if counts %} <span class="link-badge">Unread {{ counts.news_unread }}</span><span class="link-badge alt">Recv {{ counts.news_total }}</span>{% endif %}</span>
+        </a>
+        <a href="{{ url_for('student_homework') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='homework.png') }}" alt="Homework">
+            <span>Homework{% if counts %} <span class="link-badge">Unread {{ counts.homework_unread }}</span><span class="link-badge alt">Recv {{ counts.homework_total }}</span>{% endif %}</span>
+        </a>
+    </div>
+</div>
+
+<div class="message-container">
+    <h2>Your Messages{% if counts %} <span class="badge-pill">{{ counts.total }}</span>{% endif %}</h2>
+    {% for message in messages %}
+        <div class="message-item">
+            <p>{{ message.sender }}: {{ message.content }}</p>
+            <button>Delete</button>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="grades-table-container">
+    <h2>Your Information</h2>
+    {% if student_info %}
+    <table class="grades-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Grade</th>
+                <th>Section</th>
+                <th>DOB</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ student_info.name }}</td>
+                <td>{{ student_info.grade }}</td>
+                <td>{{ student_info.section }}</td>
+                <td>{{ student_info.dob }}</td>
+            </tr>
+        </tbody>
+    </table>
+    {% else %}
+        <p>No information submitted yet.</p>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

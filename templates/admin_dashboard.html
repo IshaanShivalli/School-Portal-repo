@@ -1,0 +1,79 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<h1>Admin Dashboard</h1>
+
+<div class="names-list-container">
+    <h2>Manage Users</h2>
+    <div class="admin-actions">
+        <a href="{{ url_for('admin_messages') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='mail.png') }}" alt="Messages">
+            <span>View Messages{% if counts %} <span class="link-badge">Unread {{ counts.inbox_unread }}</span><span class="link-badge alt">Recv {{ counts.inbox_received }}</span>{% endif %}</span>
+        </a>
+        <a href="{{ url_for('admin_grades') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='list.png') }}" alt="Grades">
+            <span>View Grades</span>
+        </a>
+        <a href="{{ url_for('admin_broadcast') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='messages.png') }}" alt="Broadcast">
+            <span>Broadcast Message{% if counts %} <span class="link-badge">Sent {{ counts.sent_students|int + counts.sent_teachers|int }}</span><span class="link-badge alt">News {{ counts.sent_news }}</span><span class="link-badge alt">Circ {{ counts.sent_circulars }}</span>{% endif %}</span>
+        </a>
+    </div>
+</div>
+
+<div class="grades-table-container">
+    <h2>Students Overview</h2>
+    <table class="grades-table">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Status</th>
+                <th>Grade</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td><span class="status-dot {{ user.status }}"></span></td>
+                    <td>{{ user.grade }}</td>
+                    <td>
+                        <form method="post" action="{{ url_for('delete_user') }}" onsubmit="return confirm('Delete this user?');">
+                            <input type="hidden" name="username" value="{{ user.username }}">
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="grades-table-container">
+    <h2>Teachers Overview</h2>
+    <table class="grades-table">
+        <thead>
+            <tr>
+                <th>Teacher</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in teachers %}
+                <tr>
+                    <td>{{ t.username }}</td>
+                    <td><span class="status-dot {{ t.status }}"></span></td>
+                    <td>
+                        <form method="post" action="{{ url_for('delete_user') }}" onsubmit="return confirm('Delete this user?');">
+                            <input type="hidden" name="username" value="{{ t.username }}">
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

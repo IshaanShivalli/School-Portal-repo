@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>Student Inbox</h1>
+
+<div class="inbox-container">
+    {% if messages %}
+        {% for m in messages %}
+            <div class="inbox-item">
+                <p><b>{{ m.sender }}</b>: {{ m.message }}</p>
+                <span>{{ m.created_at }}</span>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No student messages.</p>
+    {% endif %}
+</div>
+{% endblock %}

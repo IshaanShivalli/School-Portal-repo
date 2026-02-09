@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% block body %}
+<h1>Circulars (Grade {{ grade }})</h1>
+
+<div class="message-container">
+    {% if circulars %}
+        {% for c in circulars %}
+            <div class="message-item" style="align-items:flex-start;">
+                <div>
+                    <p><b>{{ c.title }}</b></p>
+                    <p>{{ c.body }}</p>
+                    <p style="font-size:0.85rem;">Posted by {{ c.sender }} on {{ c.created_at }}</p>
+                    {% if c.attachment %}
+                        <a href="{{ url_for('static', filename=c.attachment) }}">Download attachment</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No circulars available for your grade.</p>
+    {% endif %}
+</div>
+{% endblock %}

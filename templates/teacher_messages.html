@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<h1>Message Student</h1>
+<form method="post">
+    <select name="student_id">
+        {% for s in students %}
+        <option value="{{ s.id }}">{{ s.username }} ({{ s.grade }})</option>
+        {% endfor %}
+    </select><br><br>
+    <textarea name="message" placeholder="Write your message here" required></textarea><br>
+    <button type="submit">Send</button>
+</form>
+
+<hr>
+
+<h2>Admin/Teacher Inbox</h2>
+{% for m in messages %}
+<p><b>{{ m.sender }}</b>: {{ m.message }}</p>
+{% endfor %}
+<form method="post" action="{{ url_for('teacher_clear_inbox') }}">
+    <button type="submit" style="margin-bottom:10px;">Clear Inbox</button>
+</form>
+
+<p style="margin-top:10px;">
+    <a href="{{ url_for('teacher_student_inbox') }}">View Student Inbox</a>
+</p>
+{% endblock %}

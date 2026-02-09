@@ -1,0 +1,66 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<h1>Teacher Dashboard</h1>
+
+<div class="names-list-container">
+    <h2>Messages</h2>
+    <div class="admin-actions">
+        <a href="{{ url_for('teacher_messages') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='email.png') }}" alt="Message Students">
+            <span>Message Students{% if counts %} <span class="link-badge">Sent {{ counts.sent_students }}</span>{% endif %}</span>
+        </a>
+        <a href="{{ url_for('teacher_to_admin') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='admin.png') }}" alt="Message Admin">
+            <span>Message Admin{% if counts %} <span class="link-badge">Sent {{ counts.sent_admin }}</span>{% endif %}</span>
+        </a>
+        <a href="{{ url_for('teacher_student_inbox') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='mail.png') }}" alt="Student Inbox">
+            <span>Teacher Inbox{% if counts %} <span class="link-badge">Unread {{ counts.inbox_unread }}</span><span class="link-badge alt">Recv {{ counts.inbox_received }}</span>{% endif %}</span>
+        </a>
+    </div>
+</div>
+
+<div class="names-list-container">
+    <h2>Teacher Tools</h2>
+    <div class="admin-actions">
+        <a href="{{ url_for('teacher_circulars') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='list.png') }}" alt="Send Circulars">
+            <span>Send Circulars{% if counts %} <span class="link-badge">Sent {{ counts.sent_circulars }}</span>{% endif %}</span>
+        </a>
+        <a href="{{ url_for('teacher_homework') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='homework.png') }}" alt="Send Homework">
+            <span>Send Homework{% if counts %} <span class="link-badge">Sent {{ counts.sent_homework }}</span>{% endif %}</span>
+        </a>
+        <a href="{{ url_for('school_news') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='comments.png') }}" alt="School News">
+            <span>School News{% if counts %} <span class="link-badge">Unread {{ counts.news_unread }}</span><span class="link-badge alt">Recv {{ counts.news_total }}</span>{% endif %}</span>
+        </a>
+    </div>
+</div>
+
+<div class="grades-table-container">
+    <h2>Students</h2>
+    <table class="grades-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Grade</th>
+                <th>Section</th>
+                <th>DOB</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in students %}
+            <tr>
+                <td>{{ s.username }}</td>
+                <td>{{ s.grade }}</td>
+                <td>{{ s.section }}</td>
+                <td>{{ s.dob }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
