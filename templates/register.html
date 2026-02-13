@@ -1,22 +1,38 @@
 {% extends "layout.html" %}
 
 {% block body %}
-<h1>Register</h1>
+<section class="auth-page register">
+    <div class="auth-card">
+        <h1>Register</h1>
+        <p class="auth-subtitle">Create an account to access the school portal.</p>
 
-{% if error %}
-    <p style="color:red">{{ error }}</p>
-{% endif %}
+        {% if error %}
+            <p class="auth-error">{{ error }}</p>
+        {% endif %}
 
-<form method="post">
-    <input type="text" name="username" placeholder="Username" required><br>
-    <input type="password" name="password" placeholder="Password" required><br>
-    <input type="password" name="confirm" placeholder="Confirm Password" required><br>
-    <select name="role" required>
-        <option value="">Select Role</option>
-        <option value="student">Student</option>
-        <option value="teacher">Teacher</option>
-        <option value="admin">Admin</option>
-    </select><br>
-    <button type="submit">Register</button>
-</form>
+        <form method="post" class="auth-form">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <input type="password" name="confirm" placeholder="Confirm Password" required>
+            <select name="role" required>
+                <option value="">Select Role</option>
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+                <option value="admin">Admin</option>
+            </select>
+            <button type="submit">Register</button>
+        </form>
+
+        <div class="auth-hints">
+            <p><span>Username field:</span> <img src="{{ url_for('static', filename='Login.png') }}" alt="Username input example"></p>
+            <p><span>Password field:</span> <img src="{{ url_for('static', filename='Password.png') }}" alt="Password input example"></p>
+            <p><span>Confirm field:</span> <img src="{{ url_for('static', filename='Confirm.png') }}" alt="Confirm password input example"></p>
+            <p><span>Role selector:</span> <img src="{{ url_for('static', filename='Role.png') }}" alt="Role select example"></p>
+        </div>
+
+        <p class="auth-footer">
+            Already have an account? <a href="{{ url_for('login') }}">Login</a>
+        </p>
+    </div>
+</section>
 {% endblock %}
