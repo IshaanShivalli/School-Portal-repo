@@ -1,13 +1,9 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, abort
-from app import db, login_required, role_required, sanitise_grades, save_upload
-
-teacher_bp = Blueprint("teacher", __name__)
+from flask import render_template, request, redirect, url_for, session, abort
 
 
-@teacher_bp.route("/teacher_messages", methods=["GET", "POST"])
-@login_required
-@role_required("teacher")
 def teacher_messages():
+    from app import db
+
     students = db.execute("""
         SELECT u.id, u.username, g.grade FROM users u
         JOIN grades g ON u.id = g.user_id WHERE u.role = 'student' ORDER BY u.username
@@ -20,7 +16,7 @@ def teacher_messages():
                 "INSERT INTO messages (sender_id, recipient_id, message) VALUES (?, ?, ?)",
                 session["user_id"], student_id, message
             )
-            return redirect(url_for("teacher.teacher_messages"))
+            return redirect(url_for("teacher_messages"))
     messages = db.execute("""
         SELECT m.id, m.message, m.created_at, u.username AS sender
         FROM messages m JOIN users u ON m.sender_id = u.id
@@ -33,10 +29,9 @@ def teacher_messages():
     return render_template("teacher_messages.html", students=students, messages=messages)
 
 
-@teacher_bp.route("/teacher_student_inbox")
-@login_required
-@role_required("teacher")
 def teacher_student_inbox():
+    from app import db
+
     messages = db.execute("""
         SELECT m.id, m.message, m.created_at, u.username AS sender
         FROM messages m JOIN users u ON m.sender_id = u.id
@@ -49,18 +44,16 @@ def teacher_student_inbox():
     return render_template("teacher_student_inbox.html", messages=messages)
 
 
-@teacher_bp.route("/teacher_clear_inbox", methods=["POST"])
-@login_required
-@role_required("teacher")
 def teacher_clear_inbox():
+    from app import db
+
     db.execute("DELETE FROM messages WHERE recipient_id = ?", session["user_id"])
-    return redirect(url_for("teacher.teacher_messages"))
+    return redirect(url_for("teacher_messages"))
 
 
-@teacher_bp.route("/teacher_circulars", methods=["GET", "POST"])
-@login_required
-@role_required("teacher")
 def teacher_circulars():
+    from app import db, sanitise_grades, save_upload
+
     grades  = db.execute("SELECT DISTINCT grade FROM grades ORDER BY grade")
     success = ""
     error   = ""
@@ -88,10 +81,9 @@ def teacher_circulars():
                            success=success, error=error)
 
 
-@teacher_bp.route("/teacher_homework", methods=["GET", "POST"])
-@login_required
-@role_required("teacher")
 def teacher_homework():
+    from app import db, sanitise_grades, save_upload
+
     grades  = db.execute("SELECT DISTINCT grade FROM grades ORDER BY grade")
     success = ""
     error   = ""
@@ -119,8 +111,5 @@ def teacher_homework():
                            success=success, error=error)
 
 
-@teacher_bp.route("/teacher_to_admin", methods=["GET", "POST"])
-@login_required
-@role_required("teacher")
 def teacher_to_admin():
     abort(403)

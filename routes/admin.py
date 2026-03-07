@@ -1,14 +1,10 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
-from app import db, login_required, role_required, sanitise_grades, save_upload, status_for, VALID_GRADES
+from flask import render_template, request, redirect, url_for, session
 import time
 
-admin_bp = Blueprint("admin", __name__)
 
-
-@admin_bp.route("/admin_dashboard")
-@login_required
-@role_required("admin")
 def admin_dashboard():
+    from app import db, status_for
+
     now_ts = int(time.time())
 
     students = db.execute("""
@@ -34,11 +30,11 @@ def admin_dashboard():
         p["status"] = status_for(p, now_ts)
 
     counts = {
-        "inbox_unread":  db.execute("SELECT COUNT(*) AS c FROM messages WHERE recipient_id = ? AND is_read = 0", session["user_id"])[0]["c"],
+        "inbox_unread":   db.execute("SELECT COUNT(*) AS c FROM messages WHERE recipient_id = ? AND is_read = 0", session["user_id"])[0]["c"],
         "inbox_received": db.execute("SELECT COUNT(*) AS c FROM messages WHERE recipient_id = ?", session["user_id"])[0]["c"],
-        "sent_students": db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.recipient_id = u.id WHERE m.sender_id = ? AND u.role = 'student'", session["user_id"])[0]["c"],
-        "sent_teachers": db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.recipient_id = u.id WHERE m.sender_id = ? AND u.role = 'teacher'", session["user_id"])[0]["c"],
-        "sent_news":     db.execute("SELECT COUNT(*) AS c FROM news WHERE sender_id = ?", session["user_id"])[0]["c"],
+        "sent_students":  db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.recipient_id = u.id WHERE m.sender_id = ? AND u.role = 'student'", session["user_id"])[0]["c"],
+        "sent_teachers":  db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.recipient_id = u.id WHERE m.sender_id = ? AND u.role = 'teacher'", session["user_id"])[0]["c"],
+        "sent_news":      db.execute("SELECT COUNT(*) AS c FROM news WHERE sender_id = ?", session["user_id"])[0]["c"],
         "sent_circulars": db.execute("SELECT COUNT(*) AS c FROM circulars WHERE sender_id = ?", session["user_id"])[0]["c"],
     }
 
@@ -48,10 +44,9 @@ def admin_dashboard():
     )
 
 
-@admin_bp.route("/admin_broadcast", methods=["GET", "POST"])
-@login_required
-@role_required("admin")
 def admin_broadcast():
+    from app import db, sanitise_grades, save_upload
+
     grades   = db.execute("SELECT DISTINCT grade FROM grades ORDER BY grade")
     teachers = db.execute("SELECT id, username FROM users WHERE role = 'teacher' ORDER BY username")
     news     = db.execute("""
@@ -143,10 +138,9 @@ def admin_broadcast():
                            teachers=teachers, news=news, success=success, error=error)
 
 
-@admin_bp.route("/admin_messages")
-@login_required
-@role_required("admin")
 def admin_messages():
+    from app import db
+
     messages = db.execute("""
         SELECT m.id, m.message, m.created_at, u.username AS sender
         FROM messages m JOIN users u ON m.sender_id = u.id
@@ -156,28 +150,25 @@ def admin_messages():
     return render_template("admin_messages.html", messages=messages)
 
 
-@admin_bp.route("/admin_clear_inbox", methods=["POST"])
-@login_required
-@role_required("admin")
 def admin_clear_inbox():
+    from app import db
+
     db.execute("DELETE FROM messages WHERE recipient_id = ?", session["user_id"])
-    return redirect(url_for("admin.admin_messages"))
+    return redirect(url_for("admin_messages"))
 
 
-@admin_bp.route("/handle_message", methods=["POST"])
-@login_required
-@role_required("admin")
 def handle_message():
+    from app import db
+
     msg_id = request.form.get("msg_id")
     if msg_id:
         db.execute("UPDATE messages SET is_handled = 1 WHERE id = ?", msg_id)
-    return redirect(url_for("admin.admin_messages"))
+    return redirect(url_for("admin_messages"))
 
 
-@admin_bp.route("/admin_grades", methods=["GET", "POST"])
-@login_required
-@role_required("admin")
 def admin_grades():
+    from app import db, VALID_GRADES
+
     grades = db.execute("SELECT DISTINCT grade FROM grades ORDER BY grade")
     if request.method == "POST":
         selected_grade = request.form.get("grade", "").strip()
@@ -195,21 +186,20 @@ def admin_grades():
     return render_template("admin_grades.html", grades=grades, students=students)
 
 
-@admin_bp.route("/delete_user", methods=["POST"])
-@login_required
-@role_required("admin")
 def delete_user():
+    from app import db
+
     username = request.form.get("username")
     if not username:
-        return redirect(url_for("admin.admin_dashboard"))
+        return redirect(url_for("admin_dashboard"))
     user = db.execute("SELECT id, is_admin FROM users WHERE username = ?", username)
     if not user or user[0]["is_admin"] == 1:
-        return redirect(url_for("admin.admin_dashboard"))
-    user_id = user[0]["id"]
-    db.execute("DELETE FROM messages WHERE sender_id = ? OR recipient_id = ?", user_id, user_id)
-    db.execute("DELETE FROM grades WHERE user_id = ?", user_id)
-    db.execute("DELETE FROM circulars_seen WHERE user_id = ?", user_id)
-    db.execute("DELETE FROM homework_seen WHERE user_id = ?", user_id)
-    db.execute("DELETE FROM news_seen WHERE user_id = ?", user_id)
-    db.execute("DELETE FROM users WHERE id = ?", user_id)
-    return redirect(url_for("admin.admin_dashboard"))
+        return redirect(url_for("admin_dashboard"))
+    uid = user[0]["id"]
+    db.execute("DELETE FROM messages WHERE sender_id = ? OR recipient_id = ?", uid, uid)
+    db.execute("DELETE FROM grades WHERE user_id = ?", uid)
+    db.execute("DELETE FROM circulars_seen WHERE user_id = ?", uid)
+    db.execute("DELETE FROM homework_seen WHERE user_id = ?", uid)
+    db.execute("DELETE FROM news_seen WHERE user_id = ?", uid)
+    db.execute("DELETE FROM users WHERE id = ?", uid)
+    return redirect(url_for("admin_dashboard"))

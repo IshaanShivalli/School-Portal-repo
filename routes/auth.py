@@ -1,13 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import os, time
-from app import db, generate_school_code, send_school_code_email
-
-auth_bp = Blueprint("auth", __name__)
 
 
-@auth_bp.route("/register", methods=["GET", "POST"])
 def register():
+    from app import db, generate_school_code, send_school_code_email, login_required
+
     if "user_id" in session:
         return redirect(url_for("home"))
 
@@ -22,8 +20,7 @@ def register():
         email       = request.form.get("email", "").strip()
         school_name = request.form.get("school_name", "").strip()
 
-        allowed_roles = {"student", "teacher", "admin", "principal"}
-        if role not in allowed_roles:
+        if role not in {"student", "teacher", "admin", "principal"}:
             return render_template("register.html", error="Please select a valid role.")
 
         if not username or not password or password != confirm:
@@ -94,16 +91,17 @@ def register():
             return render_template(
                 "register.html",
                 success=f"Principal registered. School code: {code}",
-                error="Email failed to send — save your code now."
+                error="Email failed — save your code now!"
             )
 
-        return redirect(url_for("auth.login"))
+        return redirect(url_for("login"))
 
     return render_template("register.html")
 
 
-@auth_bp.route("/login", methods=["GET", "POST"])
 def login():
+    from app import db
+
     if "user_id" in session:
         return redirect(url_for("home"))
 
@@ -133,28 +131,55 @@ def login():
     return render_template("login.html")
 
 
-@auth_bp.route("/logout")
 def logout():
+    from app import db
+
     if "user_id" in session:
         db.execute(
             "UPDATE users SET is_logged_in = 0, last_seen = ? WHERE id = ?",
             int(time.time()), session["user_id"]
         )
     session.clear()
-    return redirect(url_for("auth.login"))
+    return redirect(url_for("login"))
 
 
-@auth_bp.route("/home", methods=["GET", "POST"])
+def settings():
+    from app import db
+
+    error   = ""
+    success = ""
+    if request.method == "POST":
+        current = request.form.get("current_password", "")
+        new     = request.form.get("new_password", "")
+        confirm = request.form.get("confirm_password", "")
+        if not current or not new or not confirm:
+            error = "All fields are required."
+        elif new != confirm:
+            error = "New passwords do not match."
+        else:
+            user = db.execute("SELECT password FROM users WHERE id = ?", session["user_id"])
+            if not user or not check_password_hash(user[0]["password"], current):
+                error = "Current password is incorrect."
+            else:
+                db.execute(
+                    "UPDATE users SET password = ? WHERE id = ?",
+                    generate_password_hash(new), session["user_id"]
+                )
+                success = "Password updated."
+    return render_template("settings.html", error=error, success=success)
+
+
 def home():
-    from app import status_for, login_required, VALID_GRADES, VALID_SECTIONS
+    from app import db, status_for, VALID_GRADES, VALID_SECTIONS
+
     if "user_id" not in session:
-        return redirect(url_for("auth.login"))
+        return redirect(url_for("login"))
 
     role   = session.get("role")
     now_ts = int(time.time())
 
     if role == "admin":
-        return redirect(url_for("admin.admin_dashboard"))
+        return redirect(url_for("admin_dashboard"))
 
     elif role == "principal":
         school    = db.execute("SELECT id FROM schools WHERE principal_id = ?", session["user_id"])
@@ -178,6 +203,7 @@ def home():
         return render_template("principal_dashboard.html", students=students, teachers=teachers)
 
     elif role == "teacher":
+        uid    = session["user_id"]
         counts = {k: 0 for k in [
             "inbox_unread", "inbox_received", "student_unread", "student_received",
             "sent_students", "sent_admin", "sent_circulars", "sent_homework",
@@ -187,26 +213,30 @@ def home():
             SELECT u.username, g.grade, g.section, g.dob FROM users u
             JOIN grades g ON u.id = g.user_id WHERE u.role = 'student' ORDER BY u.username
         """)
-        counts["inbox_unread"]      = db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.recipient_id = ? AND m.is_read = 0 AND u.role IN ('admin','teacher')", session["user_id"])[0]["c"]
-        counts["inbox_received"]    = db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.recipient_id = ? AND u.role IN ('admin','teacher')", session["user_id"])[0]["c"]
-        counts["student_unread"]    = db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.recipient_id = ? AND m.is_read = 0 AND u.role = 'student'", session["user_id"])[0]["c"]
-        counts["student_received"]  = db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.recipient_id = ? AND u.role = 'student'", session["user_id"])[0]["c"]
-        counts["sent_students"]     = db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.recipient_id = u.id WHERE m.sender_id = ? AND u.role = 'student'", session["user_id"])[0]["c"]
-        counts["sent_admin"]        = db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.recipient_id = u.id WHERE m.sender_id = ? AND u.role = 'admin'", session["user_id"])[0]["c"]
-        counts["sent_circulars"]    = db.execute("SELECT COUNT(*) AS c FROM circulars WHERE sender_id = ?", session["user_id"])[0]["c"]
-        counts["sent_homework"]     = db.execute("SELECT COUNT(*) AS c FROM homework WHERE sender_id = ?", session["user_id"])[0]["c"]
-        counts["news_total"]        = db.execute("SELECT COUNT(*) AS c FROM news")[0]["c"]
-        counts["news_unread"]       = db.execute("SELECT COUNT(*) AS c FROM news n WHERE n.id NOT IN (SELECT news_id FROM news_seen WHERE user_id = ?)", session["user_id"])[0]["c"]
+        counts["inbox_unread"]     = db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.recipient_id = ? AND m.is_read = 0 AND u.role IN ('admin','teacher')", uid)[0]["c"]
+        counts["inbox_received"]   = db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.recipient_id = ? AND u.role IN ('admin','teacher')", uid)[0]["c"]
+        counts["student_unread"]   = db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.recipient_id = ? AND m.is_read = 0 AND u.role = 'student'", uid)[0]["c"]
+        counts["student_received"] = db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.recipient_id = ? AND u.role = 'student'", uid)[0]["c"]
+        counts["sent_students"]    = db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.recipient_id = u.id WHERE m.sender_id = ? AND u.role = 'student'", uid)[0]["c"]
+        counts["sent_admin"]       = db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.recipient_id = u.id WHERE m.sender_id = ? AND u.role = 'admin'", uid)[0]["c"]
+        counts["sent_circulars"]   = db.execute("SELECT COUNT(*) AS c FROM circulars WHERE sender_id = ?", uid)[0]["c"]
+        counts["sent_homework"]    = db.execute("SELECT COUNT(*) AS c FROM homework WHERE sender_id = ?", uid)[0]["c"]
+        counts["news_total"]       = db.execute("SELECT COUNT(*) AS c FROM news")[0]["c"]
+        counts["news_unread"]      = db.execute("SELECT COUNT(*) AS c FROM news n WHERE n.id NOT IN (SELECT news_id FROM news_seen WHERE user_id = ?)", uid)[0]["c"]
         return render_template("teacher_home.html", students=students, counts=counts)
 
     else:
-        entry          = db.execute("SELECT * FROM grades WHERE user_id = ?", session["user_id"])
+        uid            = session["user_id"]
+        entry          = db.execute("SELECT * FROM grades WHERE user_id = ?", uid)
         info_submitted = bool(entry)
         message        = ""
         error          = ""
-        counts         = {k: 0 for k in ["total", "inbox_unread", "inbox_total", "sent_total",
-                                          "circulars_unread", "circulars_total", "news_unread",
-                                          "news_total", "homework_unread", "homework_total"]}
+        counts         = {k: 0 for k in [
+            "total", "inbox_unread", "inbox_total", "sent_total",
+            "circulars_unread", "circulars_total",
+            "news_unread", "news_total",
+            "homework_unread", "homework_total"
+        ]}
         if request.args.get("need_info"):
             error = "Please complete your information first."
         if request.method == "POST" and not info_submitted:
@@ -216,7 +246,7 @@ def home():
             if grade in VALID_GRADES and section in VALID_SECTIONS and dob:
                 db.execute(
                     "INSERT INTO grades (user_id, name, grade, section, dob) VALUES (?, ?, ?, ?, ?)",
-                    session["user_id"], session.get("username", ""), grade, section, dob
+                    uid, session.get("username", ""), grade, section, dob
                 )
                 info_submitted = True
                 message = "Info submitted!"
@@ -225,14 +255,14 @@ def home():
         student_info = entry[0] if entry else None
         if student_info:
             g = student_info["grade"]
-            counts["inbox_unread"]     = db.execute("SELECT COUNT(*) AS c FROM messages WHERE recipient_id = ? AND is_read = 0", session["user_id"])[0]["c"]
-            counts["inbox_total"]      = db.execute("SELECT COUNT(*) AS c FROM messages WHERE recipient_id = ?", session["user_id"])[0]["c"]
-            counts["sent_total"]       = db.execute("SELECT COUNT(*) AS c FROM messages WHERE sender_id = ?", session["user_id"])[0]["c"]
-            counts["circulars_unread"] = db.execute("SELECT COUNT(*) AS c FROM circulars c WHERE c.grade = ? AND c.id NOT IN (SELECT circular_id FROM circulars_seen WHERE user_id = ?)", g, session["user_id"])[0]["c"]
+            counts["inbox_unread"]     = db.execute("SELECT COUNT(*) AS c FROM messages WHERE recipient_id = ? AND is_read = 0", uid)[0]["c"]
+            counts["inbox_total"]      = db.execute("SELECT COUNT(*) AS c FROM messages WHERE recipient_id = ?", uid)[0]["c"]
+            counts["sent_total"]       = db.execute("SELECT COUNT(*) AS c FROM messages WHERE sender_id = ?", uid)[0]["c"]
+            counts["circulars_unread"] = db.execute("SELECT COUNT(*) AS c FROM circulars c WHERE c.grade = ? AND c.id NOT IN (SELECT circular_id FROM circulars_seen WHERE user_id = ?)", g, uid)[0]["c"]
             counts["circulars_total"]  = db.execute("SELECT COUNT(*) AS c FROM circulars WHERE grade = ?", g)[0]["c"]
-            counts["homework_unread"]  = db.execute("SELECT COUNT(*) AS c FROM homework h WHERE h.grade = ? AND h.id NOT IN (SELECT homework_id FROM homework_seen WHERE user_id = ?)", g, session["user_id"])[0]["c"]
+            counts["homework_unread"]  = db.execute("SELECT COUNT(*) AS c FROM homework h WHERE h.grade = ? AND h.id NOT IN (SELECT homework_id FROM homework_seen WHERE user_id = ?)", g, uid)[0]["c"]
             counts["homework_total"]   = db.execute("SELECT COUNT(*) AS c FROM homework WHERE grade = ?", g)[0]["c"]
-            counts["news_unread"]      = db.execute("SELECT COUNT(*) AS c FROM news n WHERE n.id NOT IN (SELECT news_id FROM news_seen WHERE user_id = ?)", session["user_id"])[0]["c"]
+            counts["news_unread"]      = db.execute("SELECT COUNT(*) AS c FROM news n WHERE n.id NOT IN (SELECT news_id FROM news_seen WHERE user_id = ?)", uid)[0]["c"]
             counts["news_total"]       = db.execute("SELECT COUNT(*) AS c FROM news")[0]["c"]
             counts["total"]            = counts["inbox_unread"] + counts["circulars_unread"] + counts["homework_unread"] + counts["news_unread"]
         return render_template(

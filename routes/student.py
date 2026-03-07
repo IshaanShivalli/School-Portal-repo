@@ -1,19 +1,16 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
-from app import db, login_required, role_required
-
-student_bp = Blueprint("student", __name__)
+from flask import render_template, request, redirect, url_for, session
 
 
-def require_grade():
+def _require_grade():
+    from app import db
     return db.execute("SELECT 1 FROM grades WHERE user_id = ? LIMIT 1", session["user_id"])
 
 
-@student_bp.route("/send_request", methods=["GET", "POST"])
-@login_required
-@role_required("student")
 def send_request():
-    if not require_grade():
-        return redirect(url_for("auth.home", need_info=1))
+    from app import db
+
+    if not _require_grade():
+        return redirect(url_for("home", need_info=1))
     if request.method == "POST":
         message  = request.form.get("message", "").strip()
         if not message:
@@ -30,12 +27,11 @@ def send_request():
     return render_template("send_request.html")
 
 
-@student_bp.route("/student_inbox")
-@login_required
-@role_required("student")
 def student_inbox():
-    if not require_grade():
-        return redirect(url_for("auth.home", need_info=1))
+    from app import db
+
+    if not _require_grade():
+        return redirect(url_for("home", need_info=1))
     messages = db.execute("""
         SELECT m.message, m.created_at, u.username AS sender
         FROM messages m JOIN users u ON m.sender_id = u.id
@@ -45,22 +41,20 @@ def student_inbox():
     return render_template("student_inbox.html", messages=messages)
 
 
-@student_bp.route("/clear_inbox", methods=["POST"])
-@login_required
-@role_required("student")
 def clear_inbox():
-    if not require_grade():
-        return redirect(url_for("auth.home", need_info=1))
+    from app import db
+
+    if not _require_grade():
+        return redirect(url_for("home", need_info=1))
     db.execute("DELETE FROM messages WHERE recipient_id = ?", session["user_id"])
-    return redirect(url_for("student.student_inbox"))
+    return redirect(url_for("student_inbox"))
 
 
-@student_bp.route("/student_circulars")
-@login_required
-@role_required("student")
 def student_circulars():
-    if not require_grade():
-        return redirect(url_for("auth.home", need_info=1))
+    from app import db
+
+    if not _require_grade():
+        return redirect(url_for("home", need_info=1))
     grade = db.execute("SELECT grade FROM grades WHERE user_id = ? LIMIT 1", session["user_id"])[0]["grade"]
     circulars = db.execute("""
         SELECT c.id, c.title, c.body, c.attachment, c.created_at, u.username AS sender
@@ -75,12 +69,11 @@ def student_circulars():
     return render_template("student_circulars.html", circulars=circulars, grade=grade)
 
 
-@student_bp.route("/student_homework")
-@login_required
-@role_required("student")
 def student_homework():
-    if not require_grade():
-        return redirect(url_for("auth.home", need_info=1))
+    from app import db
+
+    if not _require_grade():
+        return redirect(url_for("home", need_info=1))
     grade = db.execute("SELECT grade FROM grades WHERE user_id = ? LIMIT 1", session["user_id"])[0]["grade"]
     homework = db.execute("""
         SELECT h.id, h.title, h.body, h.attachment, h.created_at, u.username AS sender
