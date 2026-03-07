@@ -51,23 +51,27 @@
 </div>
 
 <div class="grades-table-container">
-    <h2>Teachers Overview</h2>
+    <h2>Principals Overview</h2>
     <table class="grades-table">
         <thead>
             <tr>
-                <th>Teacher</th>
+                <th>Principal</th>
+                <th>School Name</th>
+                <th>School Code</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            {% for t in teachers %}
+            {% for p in principals %}
                 <tr>
-                    <td>{{ t.username }}</td>
-                    <td><span class="status-dot {{ t.status }}"></span></td>
+                    <td>{{ p.username }}</td>
+                    <td>{{ p.school_name or '—' }}</td>
+                    <td><code>{{ p.school_code or '—' }}</code></td>
+                    <td><span class="status-dot {{ p.status }}"></span></td>
                     <td>
-                        <form method="post" action="{{ url_for('delete_user') }}" onsubmit="return confirm('Delete this user?');">
-                            <input type="hidden" name="username" value="{{ t.username }}">
+                        <form method="post" action="{{ url_for('delete_user') }}" onsubmit="return confirm('Delete this principal?');">
+                            <input type="hidden" name="username" value="{{ p.username }}">
                             <button type="submit" class="btn btn-danger">Delete</button>
                         </form>
                     </td>

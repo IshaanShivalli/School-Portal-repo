@@ -34,6 +34,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS schools (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             principal_id INTEGER,
+            name TEXT NOT NULL,
             email TEXT NOT NULL,
             code TEXT NOT NULL UNIQUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -122,6 +123,10 @@ def init_db():
 
     cols = db.execute("SELECT name FROM pragma_table_info('users')")
     col_names = {c["name"] for c in cols}
+    school_cols = db.execute("SELECT name FROM pragma_table_info('schools')")
+    school_col_names = {c["name"] for c in school_cols}
+    if "name" not in school_col_names:
+        db.execute("ALTER TABLE schools ADD COLUMN name TEXT DEFAULT 'Unknown School'")
     if "is_logged_in" not in col_names:
         db.execute("ALTER TABLE users ADD COLUMN is_logged_in INTEGER DEFAULT 0")
     if "last_seen" not in col_names:
@@ -320,6 +325,10 @@ def register():
                 return render_template("register.html", error="Department and phone are required for teachers.")
 
         if role == "principal":
+            db.execute(
+                "INSERT INTO schools (principal_id, name, email, code) VALUES (?, ?, ?, ?)",
+                new_user["id"], school_name, email, code
+            )
             principal_passwords = [
                 p.strip() for p in os.environ.get("PRINCIPAL_PASSWORDS", "").split(",") if p.strip()
             ]
@@ -329,10 +338,12 @@ def register():
                 return render_template("register.html", error="Invalid principal password.")
             if not email:
                 return render_template("register.html", error="Email is required for principals.")
+            school_name = request.form.get("school_name", "").strip()
+            if not school_name:
+                return render_template("register.html", error="School name is required for principals.")
             code = generate_school_code()
             while db.execute("SELECT 1 FROM schools WHERE code = ?", code):
                 code = generate_school_code()
-
         hashed = generate_password_hash(password)
         db.execute(
             "INSERT INTO users (username, password, is_admin, role, department, phone) VALUES (?, ?, ?, ?, ?, ?)",
@@ -871,8 +882,11 @@ def admin_dashboard():
         ORDER BY u.username
     """)
     principals = db.execute("""
-        SELECT u.id, u.username, u.is_logged_in, u.last_seen
-        FROM users u WHERE u.role = 'principal'
+        SELECT u.id, u.username, u.is_logged_in, u.last_seen,
+            s.name AS school_name, s.code AS school_code
+        FROM users u
+        LEFT JOIN schools s ON s.principal_id = u.id
+        WHERE u.role = 'principal'
         ORDER BY u.username
     """)
 
