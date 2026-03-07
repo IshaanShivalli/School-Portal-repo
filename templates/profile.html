@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="names-list-container" style="max-width:700px;">
+    <h1>Profile</h1>
+    <div style="display:flex;align-items:center;gap:20px;margin:16px 0;">
+        <img src="{{ url_for('static', filename=profile.profile_pic or 'favicon.png') }}" alt="Profile photo" style="width:160px;height:160px;border-radius:16px;object-fit:cover;border:1px solid #ccc;">
+        <div>
+            <h2 style="margin:0 0 6px 0;">{{ profile.username }}</h2>
+            <p style="margin:0 0 6px 0;">Role: {{ profile.role }}</p>
+            {% if profile.school_name %}
+            <p style="margin:0 0 6px 0;">School: {{ profile.school_name }}</p>
+            {% endif %}
+            {% if profile.department %}
+            <p style="margin:0 0 6px 0;">Department: {{ profile.department }}</p>
+            {% endif %}
+            {% if profile.phone %}
+            <p style="margin:0 0 6px 0;">Phone: {{ profile.phone }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

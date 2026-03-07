@@ -265,7 +265,7 @@ def add_header(response):
 
 # ── Routes (imported from separate files, registered on app directly) ─────────
 
-from routes.auth      import register, login, logout, home, settings
+from routes.auth      import register, login, logout, home, settings, profile_view
 from routes.student   import send_request, student_inbox, clear_inbox, student_circulars, student_homework
 from routes.teacher   import teacher_messages, teacher_student_inbox, teacher_clear_inbox, teacher_circulars, teacher_homework, teacher_to_admin
 from routes.admin     import admin_dashboard, admin_broadcast, admin_messages, admin_clear_inbox, handle_message, admin_grades, delete_user
@@ -276,6 +276,7 @@ app.add_url_rule("/login",                "login",                login,        
 app.add_url_rule("/logout",               "logout",               logout)
 app.add_url_rule("/home",                 "home",                 home,                 methods=["GET", "POST"])
 app.add_url_rule("/settings",             "settings",             settings,             methods=["GET", "POST"])
+app.add_url_rule("/profile/<int:user_id>", "profile_view",        profile_view)
 
 app.add_url_rule("/send_request",         "send_request",         send_request,         methods=["GET", "POST"])
 app.add_url_rule("/student_inbox",        "student_inbox",        student_inbox)

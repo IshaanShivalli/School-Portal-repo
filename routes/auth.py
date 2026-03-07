@@ -285,3 +285,19 @@ def home():
         )
 
 
+def profile_view(user_id):
+    from app import db
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    user = db.execute("""
+        SELECT u.id, u.username, u.role, u.profile_pic, u.department, u.phone, s.name AS school_name
+        FROM users u
+        LEFT JOIN schools s ON u.school_id = s.id
+        WHERE u.id = ?
+    """, user_id)
+    if not user:
+        return redirect(url_for("home"))
+    return render_template("profile.html", profile=user[0])
+
+
