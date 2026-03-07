@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SchoolBridge — School Communication Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --navy: #0a1628; --blue: #2563eb; --gold: #f59e0b;
+  --white: #ffffff; --off: #f8faff; --gray: #64748b;
+  --border: rgba(37,99,235,0.12);
+}
+html { scroll-behavior: smooth; }
+body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--white); color: var(--navy); overflow-x: hidden; }
+
+.cursor-glow { position: fixed; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 70%); pointer-events: none; z-index: 0; transform: translate(-50%, -50%); transition: left 0.08s, top 0.08s; }
+
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; display: flex; align-items: center; justify-content: space-between; padding: 1rem 6%; background: rgba(255,255,255,0.88); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); animation: navSlide 0.8s ease forwards; }
+@keyframes navSlide { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.logo { display: flex; align-items: center; gap: 0.6rem; font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: var(--navy); text-decoration: none; }
+.logo-icon { width: 38px; height: 38px; background: linear-gradient(135deg, var(--blue), #1d4ed8); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(37,99,235,0.35); }
+.nav-right { display: flex; align-items: center; gap: 1rem; }
+.btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 1.4rem; border-radius: 8px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.25s; border: none; }
+.btn-primary { background: linear-gradient(135deg, var(--blue), #1d4ed8); color: white; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,0.4); }
+.btn-ghost { background: transparent; color: var(--navy); border: 1.5px solid var(--border); }
+.btn-ghost:hover { border-color: var(--blue); color: var(--blue); background: rgba(37,99,235,0.04); }
+.btn-large { padding: 0.85rem 2rem; font-size: 1rem; border-radius: 10px; }
+
+/* HERO */
+.hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8rem 6% 4rem; position: relative; overflow: hidden; text-align: center; }
+.hero-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 20% 20%, rgba(37,99,235,0.08) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(245,158,11,0.06) 0%, transparent 60%); animation: bgPulse 8s ease-in-out infinite alternate; }
+@keyframes bgPulse { from { opacity: 0.8; } to { opacity: 1; } }
+.orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.4; animation: orbFloat linear infinite; }
+.orb-1 { width: 300px; height: 300px; background: rgba(37,99,235,0.15); top: 10%; left: 5%; animation-duration: 20s; }
+.orb-2 { width: 200px; height: 200px; background: rgba(245,158,11,0.12); top: 60%; right: 8%; animation-duration: 15s; animation-direction: reverse; }
+.orb-3 { width: 150px; height: 150px; background: rgba(59,130,246,0.1); bottom: 20%; left: 30%; animation-duration: 25s; }
+@keyframes orbFloat { 0% { transform: translate(0,0) scale(1); } 33% { transform: translate(30px,-20px) scale(1.05); } 66% { transform: translate(-20px,30px) scale(0.95); } 100% { transform: translate(0,0) scale(1); } }
+.hero-grid { position: absolute; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%); opacity: 0.5; }
+.hero-content { position: relative; z-index: 2; max-width: 800px; }
+.hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.2); color: var(--blue); font-size: 0.78rem; font-weight: 600; padding: 0.4rem 1rem; border-radius: 20px; margin-bottom: 2rem; letter-spacing: 0.08em; text-transform: uppercase; animation: fadeDown 0.8s 0.2s ease both; }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; animation: livePulse 2s infinite; }
+@keyframes livePulse { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); } 70% { box-shadow: 0 0 0 8px rgba(34,197,94,0); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
+.hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.8rem, 6vw, 5rem); font-weight: 900; line-height: 1.1; color: var(--navy); margin-bottom: 1.5rem; animation: fadeDown 0.8s 0.4s ease both; }
+.hero h1 .accent { background: linear-gradient(135deg, var(--blue), #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero h1 .underline-gold { position: relative; display: inline-block; }
+.hero h1 .underline-gold::after { content: ''; position: absolute; bottom: -4px; left: 0; right: 0; height: 4px; background: var(--gold); border-radius: 2px; animation: underlineGrow 1s 1.2s ease both; transform-origin: left; }
+@keyframes underlineGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.hero p { font-size: clamp(1rem, 2vw, 1.2rem); line-height: 1.75; color: var(--gray); max-width: 580px; margin: 0 auto 2.5rem; animation: fadeDown 0.8s 0.6s ease both; }
+.hero-cta { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 4rem; animation: fadeDown 0.8s 0.8s ease both; }
+@keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* HERO IMAGES */
+.hero-images { position: relative; z-index: 2; display: flex; gap: 1.2rem; animation: fadeUp 1s 1s ease both; width: 100%; max-width: 1100px; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+.hero-img-card { flex: 1; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(10,22,40,0.15); border: 1px solid rgba(255,255,255,0.8); transition: transform 0.4s ease, box-shadow 0.4s ease; position: relative; }
+.hero-img-card:nth-child(2) { transform: translateY(-20px); }
+.hero-img-card:nth-child(3) { transform: translateY(-8px); }
+.hero-img-card:hover { transform: translateY(-28px) scale(1.02) !important; box-shadow: 0 30px 80px rgba(10,22,40,0.2); }
+.hero-img-card img { width: 100%; height: 220px; object-fit: cover; display: block; }
+.hero-img-label { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(10,22,40,0.85)); color: white; padding: 2rem 1rem 0.8rem; font-size: 0.85rem; font-weight: 600; }
+
+/* STATS */
+.stats-bar { background: var(--navy); padding: 3rem 6%; display: flex; justify-content: center; }
+.stats-inner { display: flex; width: 100%; max-width: 900px; border-radius: 20px; overflow: hidden; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+.stat-item { flex: 1; text-align: center; padding: 2rem 1rem; border-right: 1px solid rgba(255,255,255,0.08); transition: background 0.3s; }
+.stat-item:last-child { border-right: none; }
+.stat-item:hover { background: rgba(255,255,255,0.04); }
+.stat-num { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 900; color: var(--gold); display: block; }
+.stat-label { font-size: 0.85rem; color: rgba(255,255,255,0.5); margin-top: 0.3rem; text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* FEATURES */
+.features { padding: 7rem 6%; background: var(--off); position: relative; overflow: hidden; }
+.features::before { content: ''; position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 70%); border-radius: 50%; }
+.section-eyebrow { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--blue); text-align: center; margin-bottom: 0.8rem; }
+.section-title { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 3.5vw, 3rem); font-weight: 900; text-align: center; color: var(--navy); margin-bottom: 0.8rem; }
+.section-sub { text-align: center; color: var(--gray); font-size: 1.05rem; max-width: 500px; margin: 0 auto 4rem; line-height: 1.7; }
+.features-bento { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; }
+.bento-card { background: white; border-radius: 20px; padding: 2rem; border: 1px solid var(--border); transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1); position: relative; overflow: hidden; opacity: 0; transform: translateY(30px); }
+.bento-card.visible { opacity: 1; transform: translateY(0); }
+.bento-card:hover { transform: translateY(-6px); box-shadow: 0 20px 50px rgba(10,22,40,0.1); }
+.bento-card.wide { grid-column: span 2; }
+.bento-img { width: 100%; border-radius: 12px; margin-bottom: 1.2rem; overflow: hidden; aspect-ratio: 16/8; }
+.bento-img.tall { aspect-ratio: 4/3; }
+.bento-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+.bento-card:hover .bento-img img { transform: scale(1.04); }
+.bento-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 1rem; }
+.bento-card h3 { font-size: 1.1rem; font-weight: 700; color: var(--navy); margin-bottom: 0.5rem; }
+.bento-card p { font-size: 0.9rem; color: var(--gray); line-height: 1.65; }
+.tag { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 6px; margin-top: 0.8rem; background: rgba(37,99,235,0.08); color: var(--blue); }
+
+/* ROLES */
+.roles-section { padding: 7rem 6%; max-width: 1200px; margin: 0 auto; }
+.roles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 4rem; }
+.role-card { border-radius: 24px; overflow: hidden; position: relative; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1); opacity: 0; transform: translateY(30px); }
+.role-card.visible { opacity: 1; transform: translateY(0); }
+.role-card:hover { transform: translateY(-8px) rotate(-0.5deg); }
+.role-img { width: 100%; height: 300px; object-fit: cover; display: block; transition: transform 0.5s ease; }
+.role-card:hover .role-img { transform: scale(1.06); }
+.role-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.8rem; }
+.role-card.admin .role-overlay { background: linear-gradient(transparent 20%, rgba(10,22,40,0.92) 100%); }
+.role-card.teacher .role-overlay { background: linear-gradient(transparent 20%, rgba(37,99,235,0.92) 100%); }
+.role-card.student .role-overlay { background: linear-gradient(transparent 20%, rgba(120,53,15,0.9) 100%); }
+.role-emoji-big { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
+.role-overlay h3 { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 700; color: white; margin-bottom: 0.5rem; }
+.role-overlay ul { list-style: none; color: rgba(255,255,255,0.8); font-size: 0.85rem; line-height: 1.9; }
+.role-overlay ul li::before { content: '✓ '; opacity: 0.7; }
+
+/* TESTIMONIALS */
+.testimonial-section { background: linear-gradient(135deg, var(--navy) 0%, #1e3a8a 100%); padding: 6rem 6%; position: relative; overflow: hidden; }
+.testimonial-section::before { content: '"'; position: absolute; top: -2rem; left: 5%; font-family: 'Playfair Display', serif; font-size: 20rem; font-weight: 900; color: rgba(255,255,255,0.03); line-height: 1; pointer-events: none; }
+.testimonials-grid { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-top: 3.5rem; }
+.testimonial-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 1.8rem; backdrop-filter: blur(10px); transition: all 0.3s; opacity: 0; transform: translateY(20px); }
+.testimonial-card.visible { opacity: 1; transform: translateY(0); }
+.testimonial-card:hover { background: rgba(255,255,255,0.09); transform: translateY(-4px); }
+.stars { color: var(--gold); font-size: 0.9rem; margin-bottom: 1rem; letter-spacing: 2px; }
+.testimonial-card p { color: rgba(255,255,255,0.8); font-size: 0.92rem; line-height: 1.7; font-style: italic; margin-bottom: 1.2rem; }
+.testimonial-author { display: flex; align-items: center; gap: 0.8rem; }
+.author-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.2); }
+.author-name { font-weight: 600; color: white; font-size: 0.85rem; }
+.author-role { color: rgba(255,255,255,0.5); font-size: 0.75rem; }
+
+/* CTA */
+.cta-section { padding: 8rem 6%; text-align: center; position: relative; overflow: hidden; }
+.cta-section::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 600px; height: 600px; background: radial-gradient(circle, rgba(37,99,235,0.07) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
+.cta-section h2 { font-family: 'Playfair Display', serif; font-size: clamp(2.2rem, 4vw, 3.5rem); font-weight: 900; color: var(--navy); margin-bottom: 1.2rem; position: relative; }
+.cta-section p { color: var(--gray); font-size: 1.1rem; margin-bottom: 2.5rem; position: relative; }
+.cta-btns { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+
+footer { background: var(--navy); color: rgba(255,255,255,0.45); text-align: center; padding: 2rem; font-size: 0.85rem; }
+footer a { color: rgba(255,255,255,0.65); text-decoration: none; transition: color 0.2s; }
+footer a:hover { color: white; }
+
+.reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 900px) {
+  .features-bento { grid-template-columns: 1fr; }
+  .bento-card.wide { grid-column: span 1; }
+  .roles-grid, .testimonials-grid { grid-template-columns: 1fr; }
+  .hero-images { display: none; }
+  .stats-inner { flex-wrap: wrap; }
+  .stat-item { flex: 1 1 40%; }
+}
+</style>
+</head>
+<body>
+
+<div class="cursor-glow" id="cursorGlow"></div>
+
+<nav>
+  <a href="#" class="logo">
+    <div class="logo-icon">🏫</div>
+    SchoolBridge
+  </a>
+  <div class="nav-right">
+    <a href="/login" class="btn btn-ghost">Log In</a>
+    <a href="/register" class="btn btn-primary">Get Started →</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="hero-content">
+    <div class="hero-badge"><div class="live-dot"></div>Now Live — School Communication Portal</div>
+    <h1>The Smarter Way<br>Schools <span class="accent">Communicate</span><br><span class="underline-gold">Together</span></h1>
+    <p>One secure portal connecting admins, teachers, and students — for notices, homework, circulars, and direct messaging. No more missed communications.</p>
+    <div class="hero-cta">
+      <a href="/register" class="btn btn-primary btn-large">Start for Free →</a>
+      <a href="/login" class="btn btn-ghost btn-large">Already a member? Log in</a>
+    </div>
+  </div>
+  <div class="hero-images">
+    <div class="hero-img-card">
+      <img src="https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=600&q=80" alt="School classroom">
+      <div class="hero-img-label">📢 Live Announcements</div>
+    </div>
+    <div class="hero-img-card">
+      <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&q=80" alt="Students learning">
+      <div class="hero-img-label">📝 Homework Tracker</div>
+    </div>
+    <div class="hero-img-card">
+      <img src="https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&q=80" alt="Teacher and student">
+      <div class="hero-img-label">✉️ Direct Messaging</div>
+    </div>
+  </div>
+</section>
+
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item"><span class="stat-num">3</span><div class="stat-label">User Roles</div></div>
+    <div class="stat-item"><span class="stat-num">100%</span><div class="stat-label">Secure & Private</div></div>
+    <div class="stat-item"><span class="stat-num">Live</span><div class="stat-label">Real-time Updates</div></div>
+    <div class="stat-item"><span class="stat-num">Free</span><div class="stat-label">To Get Started</div></div>
+  </div>
+</div>
+
+<section class="features" id="features">
+  <div class="section-eyebrow">Features</div>
+  <h2 class="section-title">Everything your school needs</h2>
+  <p class="section-sub">A complete communication toolkit built for the modern school environment.</p>
+  <div class="features-bento">
+    <div class="bento-card wide">
+      <div class="bento-img">
+        <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=900&q=80" alt="School notice board">
+      </div>
+      <div class="bento-icon" style="background:#eff6ff">📢</div>
+      <h3>School-wide Announcements & News</h3>
+      <p>Admins post important updates that reach every student and teacher instantly. No more paper notices or missed emails.</p>
+      <span class="tag">Admin → Everyone</span>
+    </div>
+    <div class="bento-card">
+      <div class="bento-img tall">
+        <img src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=500&q=80" alt="Homework">
+      </div>
+      <div class="bento-icon" style="background:#fef3c7">📝</div>
+      <h3>Homework by Grade</h3>
+      <p>Teachers assign homework to specific grades with file attachments. Students see exactly what's due.</p>
+      <span class="tag">Teacher → Students</span>
+    </div>
+    <div class="bento-card wide">
+      <div class="bento-img">
+        <img src="https://images.unsplash.com/photo-1606761568499-6d2451b23c66?w=900&q=80" alt="Communication">
+      </div>
+      <div class="bento-icon" style="background:#f0fdf4">✉️</div>
+      <h3>Secure Direct Messaging</h3>
+      <p>Students message teachers, teachers message admin — all within a private, role-based inbox with read receipts.</p>
+      <span class="tag">All Roles</span>
+    </div>
+    <div class="bento-card">
+      <div class="bento-icon" style="background:#eff6ff">📋</div>
+      <h3>Grade-specific Circulars</h3>
+      <p>Send circulars to only the relevant grades — Grade 10 doesn't need to see Grade 7's notices.</p>
+      <span class="tag">Teacher & Admin</span>
+    </div>
+    <div class="bento-card">
+      <div class="bento-icon" style="background:#fdf2f8">🟢</div>
+      <h3>Online Presence Tracking</h3>
+      <p>Admins see who's online, idle, or offline in real time with live heartbeat detection.</p>
+      <span class="tag">Admin Dashboard</span>
+    </div>
+    <div class="bento-card">
+      <div class="bento-icon" style="background:#fff7ed">📎</div>
+      <h3>File Attachments</h3>
+      <p>Attach PDFs, images, and Word docs to homework, circulars, and news posts.</p>
+      <span class="tag">All Content Types</span>
+    </div>
+  </div>
+</section>
+
+<section id="roles">
+  <div class="roles-section">
+    <div class="section-eyebrow">Who It's For</div>
+    <h2 class="section-title">Built for every role in school</h2>
+    <p class="section-sub">Each person gets a tailored dashboard — only the tools and content relevant to them.</p>
+    <div class="roles-grid">
+      <div class="role-card admin reveal">
+        <img class="role-img" src="https://images.unsplash.com/photo-1531482615713-2afd69097998?w=600&q=80" alt="School admin">
+        <div class="role-overlay">
+          <span class="role-emoji-big">🏫</span>
+          <h3>Admin</h3>
+          <ul><li>Manage all users & roles</li><li>Post school-wide news</li><li>Send grade circulars</li><li>Message teachers & students</li><li>View live online status</li></ul>
+        </div>
+      </div>
+      <div class="role-card teacher reveal">
+        <img class="role-img" src="https://images.unsplash.com/photo-1577896851231-70ef18881754?w=600&q=80" alt="Teacher">
+        <div class="role-overlay">
+          <span class="role-emoji-big">👩‍🏫</span>
+          <h3>Teacher</h3>
+          <ul><li>Post homework by grade</li><li>Send circulars to students</li><li>Message students & admin</li><li>View full student roster</li><li>Read school announcements</li></ul>
+        </div>
+      </div>
+      <div class="role-card student reveal">
+        <img class="role-img" src="https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=600&q=80" alt="Students">
+        <div class="role-overlay">
+          <span class="role-emoji-big">🎒</span>
+          <h3>Student</h3>
+          <ul><li>View homework & due dates</li><li>Read grade circulars</li><li>Read school news</li><li>Message teachers directly</li><li>Track unread notifications</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="testimonial-section">
+  <div class="section-eyebrow" style="color:rgba(255,255,255,0.5)">Testimonials</div>
+  <h2 class="section-title" style="color:white">What schools are saying</h2>
+  <div class="testimonials-grid">
+    <div class="testimonial-card">
+      <div class="stars">★★★★★</div>
+      <p>"SchoolBridge completely transformed how we communicate. Everything is in one place — no more paper notices."</p>
+      <div class="testimonial-author">
+        <img class="author-avatar" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&q=80" alt="Principal">
+        <div><div class="author-name">Mrs. Sharma</div><div class="author-role">School Principal</div></div>
+      </div>
+    </div>
+    <div class="testimonial-card">
+      <div class="stars">★★★★★</div>
+      <p>"I love sending homework to just my class. The file attachment and grade filtering features are brilliant."</p>
+      <div class="testimonial-author">
+        <img class="author-avatar" src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=100&q=80" alt="Teacher">
+        <div><div class="author-name">Mr. Kapoor</div><div class="author-role">Mathematics Teacher</div></div>
+      </div>
+    </div>
+    <div class="testimonial-card">
+      <div class="stars">★★★★★</div>
+      <p>"I never miss homework anymore. I can message my teacher directly and get a reply the same day!"</p>
+      <div class="testimonial-author">
+        <img class="author-avatar" src="https://images.unsplash.com/photo-1601412436009-d964bd02edbc?w=100&q=80" alt="Student">
+        <div><div class="author-name">Priya, Grade 10</div><div class="author-role">Student</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <h2>Ready to bring your school online?</h2>
+  <p>Join SchoolBridge today — free to get started, no credit card needed.</p>
+  <div class="cta-btns">
+    <a href="/register" class="btn btn-primary btn-large">Create an Account →</a>
+    <a href="/login" class="btn btn-ghost btn-large">Log In</a>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 SchoolBridge &nbsp;·&nbsp; Built with ❤️ for schools &nbsp;·&nbsp; <a href="/login">Login</a> &nbsp;·&nbsp; <a href="/register">Register</a></p>
+</footer>
+
+<script>
+  const glow = document.getElementById('cursorGlow');
+  document.addEventListener('mousemove', e => {
+    glow.style.left = e.clientX + 'px';
+    glow.style.top = e.clientY + 'px';
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 120);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.bento-card, .role-card, .testimonial-card, .reveal').forEach(el => observer.observe(el));
+
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    document.querySelector('.orb-1').style.transform = `translate(0, ${y * 0.1}px)`;
+    document.querySelector('.orb-2').style.transform = `translate(0, ${-y * 0.08}px)`;
+  });
+</script>
+</body>
+</html>

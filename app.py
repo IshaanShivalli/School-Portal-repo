@@ -169,6 +169,11 @@ def add_header(response):
     return response
 
 
+@app.route("/landing")
+def landing():
+    return render_template("landing.html")
+
+
 @app.route("/ping")
 @login_required
 def ping():
