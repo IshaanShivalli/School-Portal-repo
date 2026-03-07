@@ -279,14 +279,14 @@ def register():
         return redirect(url_for("home"))
 
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "")
-        confirm  = request.form.get("confirm", "")
-        role     = request.form.get("role", "").strip()
-        department = request.form.get("department", "").strip()
-        phone = request.form.get("phone", "").strip()
+        username    = request.form.get("username", "").strip()
+        password    = request.form.get("password", "")
+        confirm     = request.form.get("confirm", "")
+        role        = request.form.get("role", "").strip()
+        department  = request.form.get("department", "").strip()
+        phone       = request.form.get("phone", "").strip()
         school_code = request.form.get("school_code", "").strip().upper()
-        email = request.form.get("email", "").strip()
+        email       = request.form.get("email", "").strip()
 
         allowed_roles = {"student", "teacher", "admin", "principal"}
         if role not in allowed_roles:
@@ -319,19 +319,19 @@ def register():
             if not department or not phone:
                 return render_template("register.html", error="Department and phone are required for teachers.")
 
-    if role == "principal":
-        principal_passwords = [
-            p.strip() for p in os.environ.get("PRINCIPAL_PASSWORDS", "").split(",") if p.strip()
-        ]
-        if not principal_passwords:
-            return render_template("register.html", error="Principal passwords are not configured.")
-        if password not in principal_passwords:
-            return render_template("register.html", error="Invalid principal password.")
-        if not email:
-            return render_template("register.html", error="Email is required for principals.")
-        code = generate_school_code()
-        while db.execute("SELECT 1 FROM schools WHERE code = ?", code):
+        if role == "principal":
+            principal_passwords = [
+                p.strip() for p in os.environ.get("PRINCIPAL_PASSWORDS", "").split(",") if p.strip()
+            ]
+            if not principal_passwords:
+                return render_template("register.html", error="Principal passwords are not configured.")
+            if password not in principal_passwords:
+                return render_template("register.html", error="Invalid principal password.")
+            if not email:
+                return render_template("register.html", error="Email is required for principals.")
             code = generate_school_code()
+            while db.execute("SELECT 1 FROM schools WHERE code = ?", code):
+                code = generate_school_code()
 
         hashed = generate_password_hash(password)
         db.execute(
@@ -353,10 +353,10 @@ def register():
             if ok:
                 return render_template("register.html", success="Principal registered. School code sent to email.")
             return render_template("register.html", success=f"Principal registered. School code: {code}", error="Email not configured or failed to send.")
+
         return redirect(url_for("login"))
 
     return render_template("register.html")
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
