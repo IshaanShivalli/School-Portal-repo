@@ -135,7 +135,7 @@ def logout():
 
 
 def settings():
-    from app import db
+    from app import db, save_profile_upload
 
     if "user_id" not in session:
         return redirect(url_for("login"))
@@ -143,24 +143,42 @@ def settings():
     error   = ""
     success = ""
     if request.method == "POST":
-        current = request.form.get("current_password", "")
-        new     = request.form.get("new_password", "")
-        confirm = request.form.get("confirm_password", "")
-        if not current or not new or not confirm:
-            error = "All fields are required."
-        elif new != confirm:
-            error = "New passwords do not match."
-        else:
-            user = db.execute("SELECT password FROM users WHERE id = ?", session["user_id"])
-            if not user or not check_password_hash(user[0]["password"], current):
-                error = "Current password is incorrect."
+        action = request.form.get("action")
+        if action == "password":
+            current = request.form.get("current_password", "")
+            new     = request.form.get("new_password", "")
+            confirm = request.form.get("confirm_password", "")
+            if not current or not new or not confirm:
+                error = "All fields are required."
+            elif new != confirm:
+                error = "New passwords do not match."
+            else:
+                user = db.execute("SELECT password FROM users WHERE id = ?", session["user_id"])
+                if not user or not check_password_hash(user[0]["password"], current):
+                    error = "Current password is incorrect."
+                else:
+                    db.execute(
+                        "UPDATE users SET password = ? WHERE id = ?",
+                        generate_password_hash(new), session["user_id"]
+                    )
+                    success = "Password updated."
+        elif action == "avatar":
+            pic = save_profile_upload(request.files.get("profile_pic"))
+            if not pic:
+                error = "Please upload a valid image (png/jpg)."
             else:
                 db.execute(
-                    "UPDATE users SET password = ? WHERE id = ?",
-                    generate_password_hash(new), session["user_id"]
+                    "UPDATE users SET profile_pic = ? WHERE id = ?",
+                    pic, session["user_id"]
                 )
-                success = "Password updated."
-    return render_template("settings.html", error=error, success=success)
+                success = "Profile picture updated."
+
+    user = db.execute(
+        "SELECT profile_pic FROM users WHERE id = ?",
+        session["user_id"]
+    )
+    profile_pic = user[0]["profile_pic"] if user else None
+    return render_template("settings.html", error=error, success=success, profile_pic=profile_pic)
 
 
 def home():

@@ -9,13 +9,30 @@
     <p class="message-error">{{ error }}</p>
 {% endif %}
 
-<form method="post" class="send-request-container">
-    <label>Current Password</label><br>
-    <input type="password" name="current_password" required><br><br>
-    <label>New Password</label><br>
-    <input type="password" name="new_password" required><br><br>
-    <label>Confirm New Password</label><br>
-    <input type="password" name="confirm_password" required><br><br>
-    <button type="submit">Change Password</button>
-</form>
+<div class="send-request-container">
+    <h2>Profile Picture</h2>
+    <div style="display:flex; align-items:center; gap:14px; margin-bottom:12px;">
+        <img src="{{ url_for('static', filename=profile_pic or 'favicon.png') }}" alt="Profile" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid #ccc;">
+        <span>Upload a new profile photo</span>
+    </div>
+    <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="avatar">
+        <input type="file" name="profile_pic" accept="image/png,image/jpeg" required><br><br>
+        <button type="submit">Upload Photo</button>
+    </form>
+</div>
+
+<div class="send-request-container">
+    <h2>Change Password</h2>
+    <form method="post">
+        <input type="hidden" name="action" value="password">
+        <label>Current Password</label><br>
+        <input type="password" name="current_password" required><br><br>
+        <label>New Password</label><br>
+        <input type="password" name="new_password" required><br><br>
+        <label>Confirm New Password</label><br>
+        <input type="password" name="confirm_password" required><br><br>
+        <button type="submit">Change Password</button>
+    </form>
+</div>
 {% endblock %}

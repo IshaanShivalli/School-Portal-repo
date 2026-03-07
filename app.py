@@ -18,6 +18,7 @@ app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "static", "uploads")
 ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg", "doc", "docx", "txt"}
+IMAGE_EXTENSIONS = {"png", "jpg", "jpeg"}
 VALID_GRADES = {str(i) for i in range(1, 13)}
 VALID_SECTIONS = set("ABCDEFG")
 
@@ -129,6 +130,12 @@ def init_db():
         db.execute("ALTER TABLE users ADD COLUMN phone TEXT")
     if "school_id" not in cols:
         db.execute("ALTER TABLE users ADD COLUMN school_id INTEGER")
+    if "profile_pic" not in cols:
+        db.execute("ALTER TABLE users ADD COLUMN profile_pic TEXT")
+
+    feedback_cols = {c["name"] for c in db.execute("SELECT name FROM pragma_table_info('feedback')")}
+    if "user_id" not in feedback_cols:
+        db.execute("ALTER TABLE feedback ADD COLUMN user_id INTEGER")
 
     school_cols = {c["name"] for c in db.execute("SELECT name FROM pragma_table_info('schools')")}
     if "name" not in school_cols:
@@ -152,6 +159,21 @@ def save_upload(file):
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     filename = secure_filename(file.filename)
     unique = f"{int(time.time())}_{filename}"
+    file.save(os.path.join(UPLOAD_FOLDER, unique))
+    return f"uploads/{unique}"
+
+
+def save_profile_upload(file):
+    if not file or file.filename == "":
+        return None
+    if "." not in file.filename:
+        return None
+    ext = file.filename.rsplit(".", 1)[1].lower()
+    if ext not in IMAGE_EXTENSIONS:
+        return None
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    filename = secure_filename(file.filename)
+    unique = f"profile_{int(time.time())}_{filename}"
     file.save(os.path.join(UPLOAD_FOLDER, unique))
     return f"uploads/{unique}"
 
@@ -281,7 +303,13 @@ app.add_url_rule("/principal_messages",   "principal_messages",   principal_mess
 
 @app.route("/")
 def landing_page():
-    feedbacks = db.execute("SELECT * FROM feedback ORDER BY created_at DESC LIMIT 6")
+    feedbacks = db.execute("""
+        SELECT f.*, u.profile_pic
+        FROM feedback f
+        LEFT JOIN users u ON (u.id = f.user_id) OR (u.username = f.name)
+        ORDER BY f.created_at DESC
+        LIMIT 6
+    """)
     return render_template("landing.html", feedbacks=feedbacks)
 
 
@@ -314,11 +342,16 @@ def feedback():
             error = "Invalid rating."
         else:
             db.execute(
-                "INSERT INTO feedback (name, role, message, rating) VALUES (?, ?, ?, ?)",
-                session["username"], session["role"], message, int(rating)
+                "INSERT INTO feedback (name, role, message, rating, user_id) VALUES (?, ?, ?, ?, ?)",
+                session["username"], session["role"], message, int(rating), session["user_id"]
             )
             return redirect(url_for("feedback", submitted=1))
-    feedbacks = db.execute("SELECT * FROM feedback ORDER BY created_at DESC")
+    feedbacks = db.execute("""
+        SELECT f.*, u.profile_pic
+        FROM feedback f
+        LEFT JOIN users u ON (u.id = f.user_id) OR (u.username = f.name)
+        ORDER BY f.created_at DESC
+    """)
     return render_template("feedback.html", success=success, error=error, feedbacks=feedbacks)
 
 

@@ -19,15 +19,15 @@ def admin_dashboard():
     now_ts = int(time.time())
 
     students = db.execute("""
-        SELECT u.id, u.username, g.grade, u.role, u.is_logged_in, u.last_seen
+        SELECT u.id, u.username, u.profile_pic, g.grade, u.role, u.is_logged_in, u.last_seen
         FROM users u LEFT JOIN grades g ON u.id = g.user_id WHERE u.role = 'student'
     """)
     teachers = db.execute("""
-        SELECT u.id, u.username, u.role, u.is_logged_in, u.last_seen
+        SELECT u.id, u.username, u.profile_pic, u.role, u.is_logged_in, u.last_seen
         FROM users u WHERE u.role = 'teacher' ORDER BY u.username
     """)
     principals = db.execute("""
-        SELECT u.id, u.username, u.is_logged_in, u.last_seen,
+        SELECT u.id, u.username, u.profile_pic, u.is_logged_in, u.last_seen,
                s.name AS school_name, s.code AS school_code
         FROM users u LEFT JOIN schools s ON s.principal_id = u.id
         WHERE u.role = 'principal' ORDER BY u.username

@@ -75,7 +75,8 @@ textarea { min-height: 140px; }
 
 .feedback-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem; }
 .feedback-author-info { display: flex; align-items: center; gap: 0.8rem; }
-.avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), #7c3aed); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1rem; flex-shrink: 0; }
+.avatar { width: 42px; height: 42px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #e5e7eb; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08); }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .author-name { font-weight: 700; font-size: 0.95rem; color: var(--navy); }
 .author-role-badge { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 5px; text-transform: capitalize; margin-top: 2px; }
 .role-admin { background: rgba(10,22,40,0.08); color: var(--navy); }
@@ -163,7 +164,9 @@ textarea { min-height: 140px; }
         <div class="feedback-item" style="animation-delay: {{ loop.index0 * 0.08 }}s">
           <div class="feedback-header">
             <div class="feedback-author-info">
-              <div class="avatar">{{ f.name[0].upper() }}</div>
+              <div class="avatar">
+                <img src="{{ url_for('static', filename=f.profile_pic or 'favicon.png') }}" alt="{{ f.name }} avatar">
+              </div>
               <div>
                 <div class="author-name">{{ f.name }}</div>
                 <span class="author-role-badge role-{{ f.role }}">{{ f.role }}</span>
