@@ -1,9 +1,20 @@
-from flask import render_template, request, redirect, url_for, session
+from flask import render_template, request, redirect, url_for, session, abort
 import time
+
+
+def _require_admin():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    if session.get("role") != "admin":
+        abort(403)
+    return None
 
 
 def admin_dashboard():
     from app import db, status_for
+    guard = _require_admin()
+    if guard:
+        return guard
 
     now_ts = int(time.time())
 
@@ -46,6 +57,9 @@ def admin_dashboard():
 
 def admin_broadcast():
     from app import db, sanitise_grades, save_upload
+    guard = _require_admin()
+    if guard:
+        return guard
 
     grades   = db.execute("SELECT DISTINCT grade FROM grades ORDER BY grade")
     teachers = db.execute("SELECT id, username FROM users WHERE role = 'teacher' ORDER BY username")
@@ -140,6 +154,9 @@ def admin_broadcast():
 
 def admin_messages():
     from app import db
+    guard = _require_admin()
+    if guard:
+        return guard
 
     messages = db.execute("""
         SELECT m.id, m.message, m.created_at, u.username AS sender
@@ -152,6 +169,9 @@ def admin_messages():
 
 def admin_clear_inbox():
     from app import db
+    guard = _require_admin()
+    if guard:
+        return guard
 
     db.execute("DELETE FROM messages WHERE recipient_id = ?", session["user_id"])
     return redirect(url_for("admin_messages"))
@@ -159,6 +179,9 @@ def admin_clear_inbox():
 
 def handle_message():
     from app import db
+    guard = _require_admin()
+    if guard:
+        return guard
 
     msg_id = request.form.get("msg_id")
     if msg_id:
@@ -168,6 +191,9 @@ def handle_message():
 
 def admin_grades():
     from app import db, VALID_GRADES
+    guard = _require_admin()
+    if guard:
+        return guard
 
     grades = db.execute("SELECT DISTINCT grade FROM grades ORDER BY grade")
     if request.method == "POST":
@@ -188,6 +214,9 @@ def admin_grades():
 
 def delete_user():
     from app import db
+    guard = _require_admin()
+    if guard:
+        return guard
 
     username = request.form.get("username")
     if not username:

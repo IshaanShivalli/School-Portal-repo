@@ -1,10 +1,10 @@
-from flask import render_template, request, redirect, url_for, session
+﻿from flask import render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import os, time
 
 
 def register():
-    from app import db, generate_school_code, send_school_code_email, login_required
+    from app import db, generate_school_code, send_school_code_email
 
     if "user_id" in session:
         return redirect(url_for("home"))
@@ -18,7 +18,7 @@ def register():
         phone       = request.form.get("phone", "").strip()
         school_code = request.form.get("school_code", "").strip().upper()
         email       = request.form.get("email", "").strip()
-        school_name = request.form.get("school_name", "").strip()
+        school_name = f"{username}'s School"
 
         if role not in {"student", "teacher", "admin", "principal"}:
             return render_template("register.html", error="Please select a valid role.")
@@ -51,17 +51,8 @@ def register():
 
         code = None
         if role == "principal":
-            principal_passwords = [
-                p.strip() for p in os.environ.get("PRINCIPAL_PASSWORDS", "").split(",") if p.strip()
-            ]
-            if not principal_passwords:
-                return render_template("register.html", error="Principal passwords are not configured.")
-            if password not in principal_passwords:
-                return render_template("register.html", error="Invalid principal password.")
             if not email:
                 return render_template("register.html", error="Email is required for principals.")
-            if not school_name:
-                return render_template("register.html", error="School name is required for principals.")
             code = generate_school_code()
             while db.execute("SELECT 1 FROM schools WHERE code = ?", code):
                 code = generate_school_code()
@@ -91,7 +82,7 @@ def register():
             return render_template(
                 "register.html",
                 success=f"Principal registered. School code: {code}",
-                error="Email failed — save your code now!"
+                error="Email failed - save your code now!"
             )
 
         return redirect(url_for("login"))
@@ -145,6 +136,9 @@ def logout():
 
 def settings():
     from app import db
+
+    if "user_id" not in session:
+        return redirect(url_for("login"))
 
     error   = ""
     success = ""
@@ -271,3 +265,5 @@ def home():
             name_prefill=session.get("username", ""),
             student_info=student_info, counts=counts
         )
+
+

@@ -1,8 +1,19 @@
 from flask import render_template, request, redirect, url_for, session, abort
 
 
+def _require_teacher():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    if session.get("role") != "teacher":
+        abort(403)
+    return None
+
+
 def teacher_messages():
     from app import db
+    guard = _require_teacher()
+    if guard:
+        return guard
 
     students = db.execute("""
         SELECT u.id, u.username, g.grade FROM users u
@@ -31,6 +42,9 @@ def teacher_messages():
 
 def teacher_student_inbox():
     from app import db
+    guard = _require_teacher()
+    if guard:
+        return guard
 
     messages = db.execute("""
         SELECT m.id, m.message, m.created_at, u.username AS sender
@@ -46,6 +60,9 @@ def teacher_student_inbox():
 
 def teacher_clear_inbox():
     from app import db
+    guard = _require_teacher()
+    if guard:
+        return guard
 
     db.execute("DELETE FROM messages WHERE recipient_id = ?", session["user_id"])
     return redirect(url_for("teacher_messages"))
@@ -53,6 +70,9 @@ def teacher_clear_inbox():
 
 def teacher_circulars():
     from app import db, sanitise_grades, save_upload
+    guard = _require_teacher()
+    if guard:
+        return guard
 
     grades  = db.execute("SELECT DISTINCT grade FROM grades ORDER BY grade")
     success = ""
@@ -83,6 +103,9 @@ def teacher_circulars():
 
 def teacher_homework():
     from app import db, sanitise_grades, save_upload
+    guard = _require_teacher()
+    if guard:
+        return guard
 
     grades  = db.execute("SELECT DISTINCT grade FROM grades ORDER BY grade")
     success = ""
@@ -112,4 +135,7 @@ def teacher_homework():
 
 
 def teacher_to_admin():
+    guard = _require_teacher()
+    if guard:
+        return guard
     abort(403)

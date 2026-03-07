@@ -1,8 +1,12 @@
-from flask import render_template, request, redirect, url_for, session
+from flask import render_template, request, redirect, url_for, session, abort
 
 
 def principal_messages():
     from app import db
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    if session.get("role") != "principal":
+        abort(403)
 
     school    = db.execute("SELECT id FROM schools WHERE principal_id = ?", session["user_id"])
     school_id = school[0]["id"] if school else None

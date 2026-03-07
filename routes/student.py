@@ -1,6 +1,15 @@
 from flask import render_template, request, redirect, url_for, session
 
 
+def _require_student():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    if session.get("role") != "student":
+        from flask import abort
+        abort(403)
+    return None
+
+
 def _require_grade():
     from app import db
     return db.execute("SELECT 1 FROM grades WHERE user_id = ? LIMIT 1", session["user_id"])
@@ -8,6 +17,9 @@ def _require_grade():
 
 def send_request():
     from app import db
+    guard = _require_student()
+    if guard:
+        return guard
 
     if not _require_grade():
         return redirect(url_for("home", need_info=1))
@@ -29,6 +41,9 @@ def send_request():
 
 def student_inbox():
     from app import db
+    guard = _require_student()
+    if guard:
+        return guard
 
     if not _require_grade():
         return redirect(url_for("home", need_info=1))
@@ -43,6 +58,9 @@ def student_inbox():
 
 def clear_inbox():
     from app import db
+    guard = _require_student()
+    if guard:
+        return guard
 
     if not _require_grade():
         return redirect(url_for("home", need_info=1))
@@ -52,6 +70,9 @@ def clear_inbox():
 
 def student_circulars():
     from app import db
+    guard = _require_student()
+    if guard:
+        return guard
 
     if not _require_grade():
         return redirect(url_for("home", need_info=1))
@@ -71,6 +92,9 @@ def student_circulars():
 
 def student_homework():
     from app import db
+    guard = _require_student()
+    if guard:
+        return guard
 
     if not _require_grade():
         return redirect(url_for("home", need_info=1))
