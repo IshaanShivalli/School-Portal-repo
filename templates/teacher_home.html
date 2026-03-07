@@ -10,10 +10,6 @@
             <img src="{{ url_for('static', filename='email.png') }}" alt="Message Students">
             <span>Message Students{% if counts %} <span class="link-badge">Sent {{ counts.sent_students }}</span>{% endif %}</span>
         </a>
-        <a href="{{ url_for('teacher_to_admin') }}" class="admin-action">
-            <img src="{{ url_for('static', filename='admin.png') }}" alt="Message Admin">
-            <span>Message Admin{% if counts %} <span class="link-badge">Sent {{ counts.sent_admin }}</span>{% endif %}</span>
-        </a>
         <a href="{{ url_for('teacher_student_inbox') }}" class="admin-action">
             <img src="{{ url_for('static', filename='mail.png') }}" alt="Student Inbox">
             <span>Teacher Inbox{% if counts %} <span class="link-badge">Unread {{ counts.inbox_unread }}</span><span class="link-badge alt">Recv {{ counts.inbox_received }}</span>{% endif %}</span>

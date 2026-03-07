@@ -47,8 +47,8 @@ textarea:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px 
 textarea { min-height: 140px; }
 
 /* STAR RATING */
-.star-rating { display: flex; gap: 0.4rem; margin-top: 0.4rem; }
-.star-rating input { display: none; }
+.star-rating { display: inline-flex; flex-direction: row-reverse; justify-content: flex-end; gap: 0.4rem; margin-top: 0.4rem; position: relative; }
+.star-rating input { position: absolute; left: -9999px; }
 .star-rating label {
   font-size: 2rem; cursor: pointer; color: #d1d5db;
   transition: color 0.15s, transform 0.15s;
@@ -98,8 +98,8 @@ textarea { min-height: 140px; }
 <nav>
   <a href="/landing" class="logo"><div class="logo-icon">🏫</div> SchoolBridge</a>
   <div style="display:flex;gap:0.8rem">
-    <a href="/" class="btn btn-ghost">← Dashboard</a>
-    <a href="/landing" class="btn btn-ghost">Home</a>
+    <a href="/home" class="btn btn-ghost">← Dashboard</a>
+    <a href="/" class="btn btn-ghost">Home</a>
   </div>
 </nav>
 

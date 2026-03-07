@@ -16,11 +16,6 @@
             <button type="submit">Login</button>
         </form>
 
-        <div class="auth-hints">
-            <p><span>Username field:</span> <img src="{{ url_for('static', filename='Login.png') }}" alt="Username input example"></p>
-            <p><span>Password field:</span> <img src="{{ url_for('static', filename='Password.png') }}" alt="Password input example"></p>
-        </div>
-
         <p class="auth-footer">
             Don't have an account? <a href="{{ url_for('register') }}">Register</a>
         </p>

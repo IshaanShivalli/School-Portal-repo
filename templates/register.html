@@ -9,6 +9,9 @@
         {% if error %}
             <p class="auth-error">{{ error }}</p>
         {% endif %}
+        {% if success %}
+            <p class="auth-error" style="border-color: rgba(39,174,96,0.35); background-color: rgba(39,174,96,0.08); color: #27ae60;">{{ success }}</p>
+        {% endif %}
 
         <form method="post" class="auth-form">
             <input type="text" name="username" placeholder="Username" required>
@@ -18,21 +21,51 @@
                 <option value="">Select Role</option>
                 <option value="student">Student</option>
                 <option value="teacher">Teacher</option>
+                <option value="principal">Principal</option>
                 <option value="admin">Admin</option>
             </select>
+            <div id="school-code-field" style="display:none;">
+                <input type="text" name="school_code" placeholder="School Code">
+            </div>
+            <div id="principal-fields" style="display:none;">
+                <input type="email" name="email" placeholder="Principal Email">
+            </div>
+            <div id="teacher-fields" style="display:none;">
+                <input type="text" name="department" placeholder="Department">
+                <input type="tel" name="phone" placeholder="Phone">
+            </div>
             <button type="submit">Register</button>
         </form>
-
-        <div class="auth-hints">
-            <p><span>Username field:</span> <img src="{{ url_for('static', filename='Login.png') }}" alt="Username input example"></p>
-            <p><span>Password field:</span> <img src="{{ url_for('static', filename='Password.png') }}" alt="Password input example"></p>
-            <p><span>Confirm field:</span> <img src="{{ url_for('static', filename='Confirm.png') }}" alt="Confirm password input example"></p>
-            <p><span>Role selector:</span> <img src="{{ url_for('static', filename='Role.png') }}" alt="Role select example"></p>
-        </div>
 
         <p class="auth-footer">
             Already have an account? <a href="{{ url_for('login') }}">Login</a>
         </p>
     </div>
 </section>
+<script>
+    const roleSelect = document.querySelector('select[name="role"]');
+    const teacherFields = document.getElementById('teacher-fields');
+    const principalFields = document.getElementById('principal-fields');
+    const schoolCodeField = document.getElementById('school-code-field');
+    const departmentInput = teacherFields.querySelector('input[name="department"]');
+    const phoneInput = teacherFields.querySelector('input[name="phone"]');
+    const emailInput = principalFields.querySelector('input[name="email"]');
+    const schoolCodeInput = schoolCodeField.querySelector('input[name="school_code"]');
+
+    const toggleTeacherFields = () => {
+        const isTeacher = roleSelect.value === 'teacher';
+        const isStudent = roleSelect.value === 'student';
+        const isPrincipal = roleSelect.value === 'principal';
+        teacherFields.style.display = isTeacher ? 'block' : 'none';
+        departmentInput.required = isTeacher;
+        phoneInput.required = isTeacher;
+        principalFields.style.display = isPrincipal ? 'block' : 'none';
+        emailInput.required = isPrincipal;
+        schoolCodeField.style.display = (isTeacher || isStudent) ? 'block' : 'none';
+        schoolCodeInput.required = (isTeacher || isStudent);
+    };
+
+    roleSelect.addEventListener('change', toggleTeacherFields);
+    toggleTeacherFields();
+</script>
 {% endblock %}

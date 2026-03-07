@@ -6,6 +6,10 @@ from functools import wraps
 from dotenv import load_dotenv
 import os
 import time
+import random
+import string
+import smtplib
+from email.message import EmailMessage
 
 load_dotenv()
 
@@ -26,6 +30,15 @@ db = SQL("sqlite:///db.sqlite3")
 
 
 def init_db():
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS schools (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            principal_id INTEGER,
+            email TEXT NOT NULL,
+            code TEXT NOT NULL UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     db.execute("""
         CREATE TABLE IF NOT EXISTS news (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -115,6 +128,12 @@ def init_db():
         db.execute("ALTER TABLE users ADD COLUMN last_seen INTEGER DEFAULT 0")
     if "role" not in col_names:
         db.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'student'")
+    if "department" not in col_names:
+        db.execute("ALTER TABLE users ADD COLUMN department TEXT")
+    if "phone" not in col_names:
+        db.execute("ALTER TABLE users ADD COLUMN phone TEXT")
+    if "school_id" not in col_names:
+        db.execute("ALTER TABLE users ADD COLUMN school_id INTEGER")
 
 
 init_db()
@@ -139,6 +158,38 @@ def save_upload(file):
 
 def sanitise_grades(raw_grades):
     return [g for g in raw_grades if g in VALID_GRADES]
+
+
+def generate_school_code(length=8):
+    alphabet = string.ascii_uppercase + string.digits
+    return "".join(random.choice(alphabet) for _ in range(length))
+
+
+def send_school_code_email(to_email, code):
+    host = os.environ.get("SMTP_HOST")
+    port = int(os.environ.get("SMTP_PORT", "0") or 0)
+    user = os.environ.get("SMTP_USER")
+    password = os.environ.get("SMTP_PASS")
+    sender = os.environ.get("SMTP_FROM") or user
+
+    if not host or not port or not sender:
+        return False, "Email service is not configured."
+
+    msg = EmailMessage()
+    msg["Subject"] = "Your SchoolBridge School Code"
+    msg["From"] = sender
+    msg["To"] = to_email
+    msg.set_content(f"Your SchoolBridge school code is: {code}\n\nShare this code with teachers and students to register.")
+
+    try:
+        with smtplib.SMTP(host, port, timeout=10) as server:
+            server.starttls()
+            if user and password:
+                server.login(user, password)
+            server.send_message(msg)
+        return True, ""
+    except Exception as exc:
+        return False, str(exc)
 
 
 def login_required(f):
@@ -179,15 +230,20 @@ def add_header(response):
     return response
 
 
-@app.route("/landing")
-def landing():
+@app.route("/")
+def landing_page():
     feedbacks = db.execute("SELECT * FROM feedback ORDER BY created_at DESC LIMIT 6")
     return render_template("landing.html", feedbacks=feedbacks)
 
-@app.route("/feedback", methods=["GET", "POST"])
+
+@app.route("/landing")
+def landing():
+    return redirect(url_for("landing_page"))
+
+@app.route("/feedback", methods=["GET", "POST"], strict_slashes=False)
 @login_required
 def feedback():
-    success = ""
+    success = "Thank you for your feedback!" if request.args.get("submitted") else ""
     error = ""
     if request.method == "POST":
         message = request.form.get("message", "").strip()
@@ -201,8 +257,9 @@ def feedback():
                 "INSERT INTO feedback (name, role, message, rating) VALUES (?, ?, ?, ?)",
                 session["username"], session["role"], message, int(rating)
             )
-            success = "Thank you for your feedback!"
-    return render_template("feedback.html", success=success, error=error)
+            return redirect(url_for("feedback", submitted=1))
+    feedbacks = db.execute("SELECT * FROM feedback ORDER BY created_at DESC")
+    return render_template("feedback.html", success=success, error=error, feedbacks=feedbacks)
 
 
 @app.route("/ping")
@@ -225,6 +282,15 @@ def register():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         confirm  = request.form.get("confirm", "")
+        role     = request.form.get("role", "").strip()
+        department = request.form.get("department", "").strip()
+        phone = request.form.get("phone", "").strip()
+        school_code = request.form.get("school_code", "").strip().upper()
+        email = request.form.get("email", "").strip()
+
+        allowed_roles = {"student", "teacher", "admin", "principal"}
+        if role not in allowed_roles:
+            return render_template("register.html", error="Please select a valid role.")
 
         if not username or not password or password != confirm:
             return render_template("register.html", error="Invalid input or passwords don't match.")
@@ -232,11 +298,54 @@ def register():
         if db.execute("SELECT id FROM users WHERE username = ?", username):
             return render_template("register.html", error="Username already taken.")
 
+        if role in {"teacher", "student"}:
+            if not school_code:
+                return render_template("register.html", error="School code is required.")
+            school = db.execute("SELECT id FROM schools WHERE code = ?", school_code)
+            if not school:
+                return render_template("register.html", error="Invalid school code.")
+            school_id = school[0]["id"]
+        else:
+            school_id = None
+
+        if role == "teacher":
+            teacher_passwords = [
+                p.strip() for p in os.environ.get("TEACHER_PASSWORDS", "").split(",") if p.strip()
+            ]
+            if not teacher_passwords:
+                return render_template("register.html", error="Teacher passwords are not configured.")
+            if password not in teacher_passwords:
+                return render_template("register.html", error="Invalid teacher password.")
+            if not department or not phone:
+                return render_template("register.html", error="Department and phone are required for teachers.")
+
+        if role == "principal":
+            if not email:
+                return render_template("register.html", error="Email is required for principals.")
+            code = generate_school_code()
+            while db.execute("SELECT 1 FROM schools WHERE code = ?", code):
+                code = generate_school_code()
+
         hashed = generate_password_hash(password)
         db.execute(
-            "INSERT INTO users (username, password, is_admin, role) VALUES (?, ?, 0, 'student')",
-            username, hashed
+            "INSERT INTO users (username, password, is_admin, role, department, phone) VALUES (?, ?, ?, ?, ?, ?)",
+            username, hashed, 1 if role == "admin" else 0, role,
+            department if role == "teacher" else None,
+            phone if role == "teacher" else None
         )
+        new_user = db.execute("SELECT id FROM users WHERE username = ?", username)[0]
+        if school_id:
+            db.execute("UPDATE users SET school_id = ? WHERE id = ?", school_id, new_user["id"])
+
+        if role == "principal":
+            db.execute(
+                "INSERT INTO schools (principal_id, email, code) VALUES (?, ?, ?)",
+                new_user["id"], email, code
+            )
+            ok, err = send_school_code_email(email, code)
+            if ok:
+                return render_template("register.html", success="Principal registered. School code sent to email.")
+            return render_template("register.html", success=f"Principal registered. School code: {code}", error="Email not configured or failed to send.")
         return redirect(url_for("login"))
 
     return render_template("register.html")
@@ -310,12 +419,48 @@ def settings():
     return render_template("settings.html", error=error, success=success)
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/home", methods=["GET", "POST"])
 @login_required
 def home():
     role = session.get("role")
     if role == "admin":
         return redirect(url_for("admin_dashboard"))
+    elif role == "principal":
+        school = db.execute("SELECT id FROM schools WHERE principal_id = ?", session["user_id"])
+        school_id = school[0]["id"] if school else None
+        students = []
+        teachers = []
+        if school_id:
+            students = db.execute("""
+                SELECT u.id, u.username, g.grade, u.is_logged_in, u.last_seen
+                FROM users u
+                LEFT JOIN grades g ON u.id = g.user_id
+                WHERE u.role = 'student' AND u.school_id = ?
+                ORDER BY u.username
+            """, school_id)
+            teachers = db.execute("""
+                SELECT u.id, u.username, u.department, u.phone, u.is_logged_in, u.last_seen
+                FROM users u
+                WHERE u.role = 'teacher' AND u.school_id = ?
+                ORDER BY u.username
+            """, school_id)
+
+        def status_for(user):
+            now_ts = int(time.time())
+            idle_seconds = 30
+            last_seen = int(user["last_seen"] or 0)
+            if last_seen > 0 and (now_ts - last_seen) <= idle_seconds:
+                return "online"
+            if user["is_logged_in"] == 1:
+                return "idle"
+            return "offline"
+
+        for u in students:
+            u["status"] = status_for(u)
+        for t in teachers:
+            t["status"] = status_for(t)
+
+        return render_template("principal_dashboard.html", students=students, teachers=teachers)
     elif role == "teacher":
         counts = {
             "inbox_unread": 0, "inbox_received": 0,
@@ -697,20 +842,7 @@ def teacher_homework():
 @login_required
 @role_required("teacher")
 def teacher_to_admin():
-    admin = db.execute("SELECT id FROM users WHERE role='admin' LIMIT 1")
-    if not admin:
-        return render_template("teacher_to_admin.html", error="No admin available.")
-    admin_id = admin[0]["id"]
-    success  = ""
-    if request.method == "POST":
-        message = request.form.get("message", "").strip()
-        if message:
-            db.execute(
-                "INSERT INTO messages (sender_id, recipient_id, message) VALUES (?, ?, ?)",
-                session["user_id"], admin_id, message
-            )
-            success = "Message sent to admin."
-    return render_template("teacher_to_admin.html", success=success)
+    abort(403)
 
 
 @app.route("/admin_dashboard")
@@ -731,6 +863,11 @@ def admin_dashboard():
         FROM users u WHERE u.role = 'teacher'
         ORDER BY u.username
     """)
+    principals = db.execute("""
+        SELECT u.id, u.username, u.is_logged_in, u.last_seen
+        FROM users u WHERE u.role = 'principal'
+        ORDER BY u.username
+    """)
 
     def status_for(user):
         last_seen = int(user["last_seen"] or 0)
@@ -744,6 +881,8 @@ def admin_dashboard():
         u["status"] = status_for(u)
     for t in teachers:
         t["status"] = status_for(t)
+    for p in principals:
+        p["status"] = status_for(p)
 
     admin_counts = {
         "inbox_unread": db.execute(
@@ -774,6 +913,7 @@ def admin_dashboard():
         "admin_dashboard.html",
         users=students,
         teachers=teachers,
+        principals=principals,
         counts=admin_counts
     )
 
@@ -886,6 +1026,54 @@ def admin_messages():
     """, session["user_id"])
     db.execute("UPDATE messages SET is_read = 1 WHERE recipient_id = ?", session["user_id"])
     return render_template("admin_messages.html", messages=messages)
+
+
+@app.route("/principal_messages", methods=["GET", "POST"])
+@login_required
+@role_required("principal")
+def principal_messages():
+    school = db.execute("SELECT id FROM schools WHERE principal_id = ?", session["user_id"])
+    school_id = school[0]["id"] if school else None
+
+    teachers = []
+    students = []
+    admins = db.execute("SELECT id, username FROM users WHERE role = 'admin' ORDER BY username")
+    if school_id:
+        teachers = db.execute(
+            "SELECT id, username FROM users WHERE role = 'teacher' AND school_id = ? ORDER BY username",
+            school_id
+        )
+        students = db.execute(
+            "SELECT id, username FROM users WHERE role = 'student' AND school_id = ? ORDER BY username",
+            school_id
+        )
+
+    if request.method == "POST":
+        recipient_id = request.form.get("recipient_id")
+        message = request.form.get("message", "").strip()
+        if recipient_id and message:
+            db.execute(
+                "INSERT INTO messages (sender_id, recipient_id, message) VALUES (?, ?, ?)",
+                session["user_id"], recipient_id, message
+            )
+            return redirect(url_for("principal_messages"))
+
+    messages = db.execute("""
+        SELECT m.message, m.created_at, u.username AS sender
+        FROM messages m
+        JOIN users u ON m.sender_id = u.id
+        WHERE m.recipient_id = ?
+        ORDER BY m.created_at DESC
+    """, session["user_id"])
+    db.execute("UPDATE messages SET is_read = 1 WHERE recipient_id = ?", session["user_id"])
+
+    return render_template(
+        "principal_messages.html",
+        teachers=teachers,
+        students=students,
+        admins=admins,
+        messages=messages
+    )
 
 
 @app.route("/handle_message", methods=["POST"])

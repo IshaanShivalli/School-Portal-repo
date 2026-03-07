@@ -1,0 +1,61 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<h1>Principal Dashboard</h1>
+
+<div class="names-list-container">
+    <h2>Overview</h2>
+    <div class="admin-actions">
+        <a href="{{ url_for('principal_messages') }}" class="admin-action">
+            <img src="{{ url_for('static', filename='mail.png') }}" alt="Messages">
+            <span>Messages</span>
+        </a>
+    </div>
+</div>
+
+<div class="grades-table-container">
+    <h2>Students</h2>
+    <table class="grades-table">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Status</th>
+                <th>Grade</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in students %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td><span class="status-dot {{ user.status }}"></span></td>
+                    <td>{{ user.grade }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="grades-table-container">
+    <h2>Teachers</h2>
+    <table class="grades-table">
+        <thead>
+            <tr>
+                <th>Teacher</th>
+                <th>Status</th>
+                <th>Department</th>
+                <th>Phone</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in teachers %}
+                <tr>
+                    <td>{{ t.username }}</td>
+                    <td><span class="status-dot {{ t.status }}"></span></td>
+                    <td>{{ t.department or '' }}</td>
+                    <td>{{ t.phone or '' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<h1>Principal Messages</h1>
+
+<form method="post">
+    <select name="recipient_id" required>
+        <option value="">Select Recipient</option>
+        <optgroup label="Admins">
+            {% for a in admins %}
+            <option value="{{ a.id }}">{{ a.username }} (admin)</option>
+            {% endfor %}
+        </optgroup>
+        <optgroup label="Teachers">
+            {% for t in teachers %}
+            <option value="{{ t.id }}">{{ t.username }} (teacher)</option>
+            {% endfor %}
+        </optgroup>
+        <optgroup label="Students">
+            {% for s in students %}
+            <option value="{{ s.id }}">{{ s.username }} (student)</option>
+            {% endfor %}
+        </optgroup>
+    </select><br><br>
+    <textarea name="message" placeholder="Write your message here" required></textarea><br>
+    <button type="submit">Send</button>
+</form>
+
+<hr>
+
+<h2>Inbox</h2>
+{% for m in messages %}
+<p><b>{{ m.sender }}</b>: {{ m.message }}</p>
+{% endfor %}
+{% endblock %}
