@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+﻿{% extends 'layout.html' %}
 
 {% block body %}
 <h1>Admin Dashboard</h1>
@@ -51,6 +51,33 @@
 </div>
 
 <div class="grades-table-container">
+    <h2>Teachers Overview</h2>
+    <table class="grades-table">
+        <thead>
+            <tr>
+                <th>Teacher</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in teachers %}
+                <tr>
+                    <td>{{ t.username }}</td>
+                    <td><span class="status-dot {{ t.status }}"></span></td>
+                    <td>
+                        <form method="post" action="{{ url_for('delete_user') }}" onsubmit="return confirm('Delete this user?');">
+                            <input type="hidden" name="username" value="{{ t.username }}">
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="grades-table-container">
     <h2>Principals Overview</h2>
     <table class="grades-table">
         <thead>
@@ -80,31 +107,5 @@
         </tbody>
     </table>
 </div>
-
-<div class="grades-table-container">
-    <h2>Principals Overview</h2>
-    <table class="grades-table">
-        <thead>
-            <tr>
-                <th>Principal</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for p in principals %}
-                <tr>
-                    <td>{{ p.username }}</td>
-                    <td><span class="status-dot {{ p.status }}"></span></td>
-                    <td>
-                        <form method="post" action="{{ url_for('delete_user') }}" onsubmit="return confirm('Delete this principal?');">
-                            <input type="hidden" name="username" value="{{ p.username }}">
-                            <button type="submit" class="btn btn-danger">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
 {% endblock %}
+
