@@ -37,6 +37,16 @@ def init_db():
         )
     """)
     db.execute("""
+    CREATE TABLE IF NOT EXISTS feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        role TEXT NOT NULL,
+        message TEXT NOT NULL,
+        rating INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    db.execute("""
         CREATE TABLE IF NOT EXISTS circulars (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             sender_id INTEGER NOT NULL,
@@ -171,7 +181,28 @@ def add_header(response):
 
 @app.route("/landing")
 def landing():
-    return render_template("landing.html")
+    feedbacks = db.execute("SELECT * FROM feedback ORDER BY created_at DESC LIMIT 6")
+    return render_template("landing.html", feedbacks=feedbacks)
+
+@app.route("/feedback", methods=["GET", "POST"])
+@login_required
+def feedback():
+    success = ""
+    error = ""
+    if request.method == "POST":
+        message = request.form.get("message", "").strip()
+        rating = request.form.get("rating", "5").strip()
+        if not message:
+            error = "Message cannot be empty."
+        elif not rating.isdigit() or not (1 <= int(rating) <= 5):
+            error = "Invalid rating."
+        else:
+            db.execute(
+                "INSERT INTO feedback (name, role, message, rating) VALUES (?, ?, ?, ?)",
+                session["username"], session["role"], message, int(rating)
+            )
+            success = "Thank you for your feedback!"
+    return render_template("feedback.html", success=success, error=error)
 
 
 @app.route("/ping")

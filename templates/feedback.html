@@ -1,0 +1,191 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feedback — SchoolBridge</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root { --navy: #0a1628; --blue: #2563eb; --gold: #f59e0b; --white: #ffffff; --off: #f8faff; --gray: #64748b; --border: rgba(37,99,235,0.12); }
+body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--off); color: var(--navy); min-height: 100vh; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 6%; background: white; border-bottom: 1px solid var(--border); }
+.logo { display: flex; align-items: center; gap: 0.6rem; font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: var(--navy); text-decoration: none; }
+.logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--blue), #1d4ed8); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+.btn { display: inline-flex; align-items: center; padding: 0.55rem 1.2rem; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.2s; border: none; font-family: 'Plus Jakarta Sans', sans-serif; }
+.btn-ghost { background: transparent; color: var(--navy); border: 1.5px solid var(--border); }
+.btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+.btn-primary { background: linear-gradient(135deg, var(--blue), #1d4ed8); color: white; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,0.4); }
+
+.page { max-width: 1100px; margin: 3rem auto; padding: 0 6%; }
+
+.page-header { text-align: center; margin-bottom: 3.5rem; }
+.eyebrow { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--blue); margin-bottom: 0.6rem; }
+.page-header h1 { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; color: var(--navy); margin-bottom: 0.8rem; }
+.page-header p { color: var(--gray); font-size: 1.05rem; }
+
+.layout { display: grid; grid-template-columns: 1fr 1.4fr; gap: 2rem; align-items: start; }
+
+/* FORM CARD */
+.form-card { background: white; border-radius: 24px; padding: 2.5rem; border: 1px solid var(--border); box-shadow: 0 8px 30px rgba(10,22,40,0.07); position: sticky; top: 2rem; }
+.form-card h2 { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--navy); margin-bottom: 0.4rem; }
+.form-card .sub { font-size: 0.9rem; color: var(--gray); margin-bottom: 2rem; }
+
+.form-group { margin-bottom: 1.4rem; }
+label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--navy); margin-bottom: 0.5rem; }
+textarea, select {
+  width: 100%; padding: 0.85rem 1rem; border-radius: 10px;
+  border: 1.5px solid rgba(37,99,235,0.15);
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.95rem;
+  color: var(--navy); background: var(--off);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none; resize: vertical;
+}
+textarea:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); background: white; }
+textarea { min-height: 140px; }
+
+/* STAR RATING */
+.star-rating { display: flex; gap: 0.4rem; margin-top: 0.4rem; }
+.star-rating input { display: none; }
+.star-rating label {
+  font-size: 2rem; cursor: pointer; color: #d1d5db;
+  transition: color 0.15s, transform 0.15s;
+  padding: 0; margin: 0; background: none; border: none; display: block;
+}
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label { color: var(--gold); }
+.star-rating label:hover { transform: scale(1.2); }
+
+.alert { padding: 0.9rem 1.2rem; border-radius: 10px; font-size: 0.9rem; margin-bottom: 1.5rem; font-weight: 500; }
+.alert-success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+.alert-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+.submit-btn { width: 100%; padding: 0.95rem; border-radius: 10px; background: linear-gradient(135deg, var(--blue), #1d4ed8); color: white; font-size: 1rem; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; border: none; cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
+.submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,0.4); }
+
+/* FEEDBACK LIST */
+.feedback-list { display: flex; flex-direction: column; gap: 1.2rem; }
+
+.feedback-item { background: white; border-radius: 18px; padding: 1.6rem; border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(10,22,40,0.05); transition: all 0.3s; animation: fadeUp 0.5s ease both; }
+.feedback-item:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(10,22,40,0.1); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.feedback-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem; }
+.feedback-author-info { display: flex; align-items: center; gap: 0.8rem; }
+.avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), #7c3aed); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1rem; flex-shrink: 0; }
+.author-name { font-weight: 700; font-size: 0.95rem; color: var(--navy); }
+.author-role-badge { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 5px; text-transform: capitalize; margin-top: 2px; }
+.role-admin { background: rgba(10,22,40,0.08); color: var(--navy); }
+.role-teacher { background: rgba(37,99,235,0.1); color: var(--blue); }
+.role-student { background: rgba(245,158,11,0.12); color: #92400e; }
+
+.feedback-stars { color: var(--gold); font-size: 0.9rem; letter-spacing: 2px; }
+.feedback-message { font-size: 0.95rem; color: #374151; line-height: 1.7; font-style: italic; }
+.feedback-date { font-size: 0.75rem; color: var(--gray); margin-top: 0.8rem; }
+
+.empty-state { text-align: center; padding: 4rem 2rem; color: var(--gray); }
+.empty-state .icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+.empty-state p { font-size: 1rem; }
+
+@media (max-width: 800px) { .layout { grid-template-columns: 1fr; } .form-card { position: static; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/landing" class="logo"><div class="logo-icon">🏫</div> SchoolBridge</a>
+  <div style="display:flex;gap:0.8rem">
+    <a href="/" class="btn btn-ghost">← Dashboard</a>
+    <a href="/landing" class="btn btn-ghost">Home</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div class="eyebrow">Community</div>
+    <h1>Share Your Feedback</h1>
+    <p>Help us improve SchoolBridge — your opinion matters.</p>
+  </div>
+
+  <div class="layout">
+
+    <!-- FORM -->
+    <div class="form-card">
+      <h2>Leave a Review</h2>
+      <p class="sub">Logged in as <strong>{{ session.username }}</strong> ({{ session.role }})</p>
+
+      {% if success %}
+      <div class="alert alert-success">✓ {{ success }}</div>
+      {% endif %}
+      {% if error %}
+      <div class="alert alert-error">⚠ {{ error }}</div>
+      {% endif %}
+
+      <form method="POST">
+        <div class="form-group">
+          <label>Your Rating</label>
+          <div class="star-rating">
+            <input type="radio" name="rating" id="s5" value="5" checked>
+            <input type="radio" name="rating" id="s4" value="4">
+            <input type="radio" name="rating" id="s3" value="3">
+            <input type="radio" name="rating" id="s2" value="2">
+            <input type="radio" name="rating" id="s1" value="1">
+            <label for="s5">★</label>
+            <label for="s4">★</label>
+            <label for="s3">★</label>
+            <label for="s2">★</label>
+            <label for="s1">★</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="message">Your Message</label>
+          <textarea id="message" name="message" placeholder="Share your experience with SchoolBridge..." required></textarea>
+        </div>
+        <button type="submit" class="submit-btn">Submit Feedback →</button>
+      </form>
+    </div>
+
+    <!-- FEEDBACK LIST -->
+    <div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;margin-bottom:1.5rem;color:var(--navy)">
+        All Feedback
+        <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:0.85rem;font-weight:500;color:var(--gray);margin-left:0.5rem">
+          ({{ feedbacks|length }} review{% if feedbacks|length != 1 %}s{% endif %})
+        </span>
+      </h2>
+
+      {% if feedbacks %}
+      <div class="feedback-list">
+        {% for f in feedbacks %}
+        <div class="feedback-item" style="animation-delay: {{ loop.index0 * 0.08 }}s">
+          <div class="feedback-header">
+            <div class="feedback-author-info">
+              <div class="avatar">{{ f.name[0].upper() }}</div>
+              <div>
+                <div class="author-name">{{ f.name }}</div>
+                <span class="author-role-badge role-{{ f.role }}">{{ f.role }}</span>
+              </div>
+            </div>
+            <div class="feedback-stars">{{ '★' * f.rating }}{{ '☆' * (5 - f.rating) }}</div>
+          </div>
+          <div class="feedback-message">"{{ f.message }}"</div>
+          <div class="feedback-date">{{ f.created_at }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <span class="icon">💬</span>
+        <p>No feedback yet. Be the first to leave a review!</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
