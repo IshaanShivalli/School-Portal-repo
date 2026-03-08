@@ -78,11 +78,13 @@ def register():
             )
             ok, err = send_school_code_email(email, code, school_name)
             if ok:
-                return render_template("register.html", success="Principal registered. School code sent to your email.")
+                return render_template(
+                    "register.html",
+                    success=f"Principal registered! Your school code is: {code} — it has also been emailed to you."
+                )
             return render_template(
                 "register.html",
-                success=f"Principal registered. School code: {code}",
-                error="Email failed - save your code now!"
+                success=f"Principal registered! Your school code is: {code} — please save this now."
             )
 
         return redirect(url_for("login"))
@@ -299,5 +301,3 @@ def profile_view(user_id):
     if not user:
         return redirect(url_for("home"))
     return render_template("profile.html", profile=user[0])
-
-
