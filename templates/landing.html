@@ -17,9 +17,47 @@
   --off: #f9f9f9;
   --gray: #5a6872;
   --border: rgba(44,62,80,0.12);
+  --card-bg: #ffffff;
+  --drop-bg: #ffffff;
 }
 html { scroll-behavior: smooth; }
-body { font-family: 'Inter', sans-serif; background: var(--off); color: var(--navy); overflow-x: hidden; }
+body { font-family: 'Inter', sans-serif; background: var(--off); color: var(--navy); overflow-x: hidden; transition: background 0.3s, color 0.3s; }
+
+/* ===== DARK MODE ===== */
+body.dark {
+  --navy: #e2e8f0;
+  --off: #0f172a;
+  --gray: #94a3b8;
+  --border: rgba(255,255,255,0.08);
+  --card-bg: #1e293b;
+  --drop-bg: #1e293b;
+}
+body.dark nav { background: rgba(15,23,42,0.97) !important; }
+body.dark .dropdown-inner { background: #1e293b; }
+body.dark .drop-card:hover { background: #273548; }
+body.dark .drop-card h4 { color: #e2e8f0; }
+body.dark .drop-card p { color: #94a3b8; }
+body.dark .bento-card { background: #1e293b; border-color: rgba(255,255,255,0.07); }
+body.dark .bento-card h3 { color: #e2e8f0; }
+body.dark .bento-card p { color: #94a3b8; }
+body.dark .features { background: #0f172a; }
+body.dark .cta-section { background: #0f172a; }
+body.dark .cta-section h2 { color: #e2e8f0; }
+body.dark .cta-section p { color: #94a3b8; }
+body.dark .section-title { color: #e2e8f0; }
+body.dark .section-sub { color: #94a3b8; }
+body.dark .hero h1 { color: #e2e8f0; }
+body.dark .hero p { color: #94a3b8; }
+body.dark .logo { color: #e2e8f0; }
+body.dark .nav-btn { color: #e2e8f0; }
+body.dark .btn-ghost { color: #e2e8f0; border-color: rgba(255,255,255,0.15); }
+body.dark .stats-bar { background: #020917; }
+body.dark .roles-section { background: #0f172a; }
+body.dark .hero-img-card { border-color: rgba(255,255,255,0.1); }
+
+/* THEME TOGGLE */
+.theme-toggle { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: all 0.25s; flex-shrink: 0; }
+.theme-toggle:hover { background: rgba(37,196,204,0.1); border-color: var(--blue); transform: rotate(20deg) scale(1.1); }
 
 .cursor-glow { position: fixed; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(37,196,204,0.08) 0%, transparent 70%); pointer-events: none; z-index: 0; transform: translate(-50%, -50%); transition: left 0.08s, top 0.08s; }
 
@@ -63,6 +101,8 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgb
 /* HERO */
 .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8rem 6% 4rem; position: relative; overflow: hidden; text-align: center; }
 .hero-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 20% 20%, rgba(37,196,204,0.09) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(240,181,74,0.08) 0%, transparent 60%); animation: bgPulse 8s ease-in-out infinite alternate; }
+.hero-bg-img { position: absolute; inset: 0; background-image: url('https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=1600&q=60'); background-size: cover; background-position: center; opacity: 0.04; }
+body.dark .hero-bg-img { opacity: 0.07; }
 @keyframes bgPulse { from { opacity: 0.8; } to { opacity: 1; } }
 .orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.4; animation: orbFloat linear infinite; }
 .orb-1 { width: 300px; height: 300px; background: rgba(37,196,204,0.18); top: 10%; left: 5%; animation-duration: 20s; }
@@ -181,6 +221,19 @@ footer a:hover { color: white; }
 .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
 .reveal.visible { opacity: 1; transform: translateY(0); }
 
+/* HOW IT WORKS BANNER */
+.how-banner { position: relative; padding: 7rem 6%; text-align: center; overflow: hidden; }
+.how-banner-img { position: absolute; inset: 0; background-image: url('https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1600&q=70'); background-size: cover; background-position: center; background-attachment: fixed; }
+.how-banner-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(26,163,168,0.92) 0%, rgba(37,196,204,0.85) 50%, rgba(15,23,42,0.9) 100%); }
+.how-banner-content { position: relative; z-index: 2; max-width: 1100px; margin: 0 auto; }
+.how-steps { display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+.how-step { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 1.5rem 1.2rem; width: 190px; backdrop-filter: blur(10px); transition: all 0.3s; }
+.how-step:hover { background: rgba(255,255,255,0.2); transform: translateY(-4px); }
+.how-num { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.2); color: white; font-weight: 900; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.8rem; }
+.how-step h4 { color: white; font-size: 0.95rem; font-weight: 700; margin-bottom: 0.4rem; }
+.how-step p { color: rgba(255,255,255,0.7); font-size: 0.8rem; line-height: 1.5; }
+.how-arrow { color: rgba(255,255,255,0.4); font-size: 1.5rem; padding: 0 0.3rem; }
+
 @media (max-width: 900px) {
   .features-bento { grid-template-columns: 1fr; }
   .bento-card.wide { grid-column: span 1; }
@@ -188,6 +241,8 @@ footer a:hover { color: white; }
   .hero-images { display: none; }
   .stats-inner { flex-wrap: wrap; }
   .stat-item { flex: 1 1 40%; }
+  .how-steps { flex-direction: column; }
+  .how-arrow { transform: rotate(90deg); }
 }
 </style>
 </head>
@@ -205,6 +260,7 @@ footer a:hover { color: white; }
       <button class="nav-btn" onclick="toggleDrop('features')">Features <span class="arrow">▼</span></button>
       <button class="nav-btn" onclick="toggleDrop('roles')">Who It's For <span class="arrow">▼</span></button>
       <button class="nav-btn" onclick="toggleDrop('howitworks')">How It Works <span class="arrow">▼</span></button>
+      <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
       <a href="/login" class="btn btn-ghost" style="margin-left:0.4rem">Log In</a>
       <a href="/register" class="btn btn-primary">Get Started →</a>
     </div>
@@ -283,6 +339,7 @@ footer a:hover { color: white; }
 
 <section class="hero">
   <div class="hero-bg"></div>
+  <div class="hero-bg-img"></div>
   <div class="hero-grid"></div>
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
@@ -370,6 +427,25 @@ footer a:hover { color: white; }
       <h3>File Attachments</h3>
       <p>Attach PDFs, images, and Word docs to homework, circulars, and news posts.</p>
       <span class="tag">All Content Types</span>
+    </div>
+  </div>
+</section>
+
+<section class="how-banner">
+  <div class="how-banner-img"></div>
+  <div class="how-banner-overlay"></div>
+  <div class="how-banner-content">
+    <div class="section-eyebrow" style="color:rgba(255,255,255,0.6)">How It Works</div>
+    <h2 style="font-size:clamp(2rem,3.5vw,3rem);font-weight:900;color:white;margin-bottom:0.8rem;letter-spacing:-0.02em">Up and running in minutes</h2>
+    <p style="color:rgba(255,255,255,0.7);font-size:1.05rem;max-width:500px;margin:0 auto 3rem;line-height:1.7">No IT setup required. Any school can be onboarded the same day.</p>
+    <div class="how-steps">
+      <div class="how-step"><div class="how-num">1</div><h4>Principal Registers</h4><p>Gets a unique school code to share</p></div>
+      <div class="how-arrow">→</div>
+      <div class="how-step"><div class="how-num">2</div><h4>Everyone Joins</h4><p>Teachers & students sign up with the code</p></div>
+      <div class="how-arrow">→</div>
+      <div class="how-step"><div class="how-num">3</div><h4>Admin Organises</h4><p>Sets roles, posts news, manages school</p></div>
+      <div class="how-arrow">→</div>
+      <div class="how-step"><div class="how-num">4</div><h4>School Communicates</h4><p>Homework, messages & circulars flow freely</p></div>
     </div>
   </div>
 </section>
@@ -485,6 +561,17 @@ footer a:hover { color: white; }
 </footer>
 
 <script>
+  // Dark mode toggle
+  const themeToggle = document.getElementById('themeToggle');
+  const saved = localStorage.getItem('sb-theme');
+  if (saved === 'dark') { document.body.classList.add('dark'); themeToggle.textContent = '☀️'; }
+  themeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+    const isDark = document.body.classList.contains('dark');
+    themeToggle.textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem('sb-theme', isDark ? 'dark' : 'light');
+  });
+
   // Nav dropdown toggle
   function toggleDrop(id) {
     const drop = document.getElementById('drop-' + id);
