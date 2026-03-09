@@ -4,91 +4,89 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Feedback — SchoolBridge</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-:root { --navy: #0a1628; --blue: #2563eb; --gold: #f59e0b; --white: #ffffff; --off: #f8faff; --gray: #64748b; --border: rgba(37,99,235,0.12); }
-body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--off); color: var(--navy); min-height: 100vh; }
+:root {
+  --navy: #2c3e50;
+  --blue: #25C4CC;
+  --blue-dark: #1aa3a8;
+  --gold: #f0b54a;
+  --off: #f9f9f9;
+  --gray: #5a6872;
+  --border: rgba(44,62,80,0.12);
+}
+body { font-family: 'Inter', sans-serif; background: var(--off); color: var(--navy); min-height: 100vh; }
 
-nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 6%; background: white; border-bottom: 1px solid var(--border); }
-.logo { display: flex; align-items: center; gap: 0.6rem; font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; color: var(--navy); text-decoration: none; }
-.logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--blue), #1d4ed8); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
-.btn { display: inline-flex; align-items: center; padding: 0.55rem 1.2rem; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.2s; border: none; font-family: 'Plus Jakarta Sans', sans-serif; }
+/* NAV */
+nav { display: flex; align-items: center; justify-content: space-between; padding: 1rem 6%; background: white; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+.logo { display: flex; align-items: center; gap: 0.6rem; font-size: 1.35rem; font-weight: 800; color: var(--navy); text-decoration: none; letter-spacing: -0.02em; }
+.logo-icon { width: 34px; height: 34px; background: linear-gradient(135deg, var(--blue), var(--blue-dark)); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+.btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.55rem 1.2rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.2s; border: none; font-family: 'Inter', sans-serif; }
 .btn-ghost { background: transparent; color: var(--navy); border: 1.5px solid var(--border); }
 .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
-.btn-primary { background: linear-gradient(135deg, var(--blue), #1d4ed8); color: white; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,0.4); }
 
+/* PAGE */
 .page { max-width: 1100px; margin: 3rem auto; padding: 0 6%; }
-
 .page-header { text-align: center; margin-bottom: 3.5rem; }
-.eyebrow { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--blue); margin-bottom: 0.6rem; }
-.page-header h1 { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; color: var(--navy); margin-bottom: 0.8rem; }
-.page-header p { color: var(--gray); font-size: 1.05rem; }
+.eyebrow { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--blue); margin-bottom: 0.6rem; }
+.page-header h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 900; color: var(--navy); margin-bottom: 0.8rem; letter-spacing: -0.03em; }
+.page-header p { color: var(--gray); font-size: 1rem; }
 
-.layout { display: grid; grid-template-columns: 1fr 1.4fr; gap: 2rem; align-items: start; }
+.layout { display: grid; grid-template-columns: 1fr 1.5fr; gap: 2.5rem; align-items: start; }
 
-/* FORM CARD */
-.form-card { background: white; border-radius: 24px; padding: 2.5rem; border: 1px solid var(--border); box-shadow: 0 8px 30px rgba(10,22,40,0.07); position: sticky; top: 2rem; }
-.form-card h2 { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--navy); margin-bottom: 0.4rem; }
-.form-card .sub { font-size: 0.9rem; color: var(--gray); margin-bottom: 2rem; }
-
+/* FORM */
+.form-card { background: white; border-radius: 24px; padding: 2.5rem; border: 1px solid var(--border); box-shadow: 0 8px 30px rgba(44,62,80,0.07); position: sticky; top: 5.5rem; }
+.form-card h2 { font-size: 1.4rem; font-weight: 800; color: var(--navy); margin-bottom: 0.3rem; letter-spacing: -0.02em; }
+.form-card .sub { font-size: 0.88rem; color: var(--gray); margin-bottom: 2rem; }
 .form-group { margin-bottom: 1.4rem; }
-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--navy); margin-bottom: 0.5rem; }
-textarea, select {
-  width: 100%; padding: 0.85rem 1rem; border-radius: 10px;
-  border: 1.5px solid rgba(37,99,235,0.15);
-  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.95rem;
-  color: var(--navy); background: var(--off);
-  transition: border-color 0.2s, box-shadow 0.2s;
-  outline: none; resize: vertical;
-}
-textarea:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); background: white; }
-textarea { min-height: 140px; }
+label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--navy); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; }
+textarea { width: 100%; padding: 0.85rem 1rem; border-radius: 10px; border: 1.5px solid rgba(37,196,204,0.2); font-family: 'Inter', sans-serif; font-size: 0.95rem; color: var(--navy); background: var(--off); transition: border-color 0.2s, box-shadow 0.2s; outline: none; resize: vertical; min-height: 130px; }
+textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,196,204,0.1); background: white; }
 
 /* STAR RATING */
-.star-rating { display: inline-flex; flex-direction: row-reverse; justify-content: flex-end; gap: 0.4rem; margin-top: 0.4rem; position: relative; }
+.star-rating { display: inline-flex; flex-direction: row-reverse; justify-content: flex-end; gap: 0.3rem; margin-top: 0.4rem; }
 .star-rating input { position: absolute; left: -9999px; }
-.star-rating label {
-  font-size: 2rem; cursor: pointer; color: #d1d5db;
-  transition: color 0.15s, transform 0.15s;
-  padding: 0; margin: 0; background: none; border: none; display: block;
-}
+.star-rating label { font-size: 2.2rem; cursor: pointer; color: #d1d5db; transition: color 0.15s, transform 0.15s; line-height: 1; display: block; }
 .star-rating input:checked ~ label,
 .star-rating label:hover,
 .star-rating label:hover ~ label { color: var(--gold); }
 .star-rating label:hover { transform: scale(1.2); }
 
-.alert { padding: 0.9rem 1.2rem; border-radius: 10px; font-size: 0.9rem; margin-bottom: 1.5rem; font-weight: 500; }
+.alert { padding: 0.9rem 1.2rem; border-radius: 10px; font-size: 0.88rem; margin-bottom: 1.4rem; font-weight: 500; }
 .alert-success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
 .alert-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
 
-.submit-btn { width: 100%; padding: 0.95rem; border-radius: 10px; background: linear-gradient(135deg, var(--blue), #1d4ed8); color: white; font-size: 1rem; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; border: none; cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
-.submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,99,235,0.4); }
+.submit-btn { width: 100%; padding: 0.95rem; border-radius: 10px; background: linear-gradient(135deg, var(--blue), var(--blue-dark)); color: white; font-size: 0.95rem; font-weight: 700; font-family: 'Inter', sans-serif; border: none; cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 14px rgba(37,196,204,0.3); }
+.submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(37,196,204,0.4); }
 
 /* FEEDBACK LIST */
-.feedback-list { display: flex; flex-direction: column; gap: 1.2rem; }
+.list-header { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem; }
+.list-header h2 { font-size: 1.3rem; font-weight: 800; color: var(--navy); letter-spacing: -0.02em; }
+.count-pill { font-size: 0.78rem; font-weight: 600; color: var(--gray); background: rgba(90,104,114,0.1); padding: 0.2rem 0.65rem; border-radius: 20px; }
 
-.feedback-item { background: white; border-radius: 18px; padding: 1.6rem; border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(10,22,40,0.05); transition: all 0.3s; animation: fadeUp 0.5s ease both; }
-.feedback-item:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(10,22,40,0.1); }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.feedback-list { display: flex; flex-direction: column; gap: 1rem; }
+.f-item { background: white; border-radius: 18px; padding: 1.5rem; border: 1px solid var(--border); box-shadow: 0 2px 10px rgba(44,62,80,0.05); transition: all 0.3s; animation: fadeUp 0.5s ease both; }
+.f-item:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(44,62,80,0.1); border-color: rgba(37,196,204,0.2); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 
-.feedback-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem; }
-.feedback-author-info { display: flex; align-items: center; gap: 0.8rem; }
-.avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #e5e7eb; color: #1f2937; font-weight: 700; font-size: 1rem; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08); }
-.author-name { font-weight: 700; font-size: 0.95rem; color: var(--navy); }
-.author-role-badge { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 5px; text-transform: capitalize; margin-top: 2px; }
-.role-admin { background: rgba(10,22,40,0.08); color: var(--navy); }
-.role-teacher { background: rgba(37,99,235,0.1); color: var(--blue); }
-.role-student { background: rgba(245,158,11,0.12); color: #92400e; }
+.f-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.9rem; }
+.f-author { display: flex; align-items: center; gap: 0.85rem; }
+.f-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(37,196,204,0.3); flex-shrink: 0; }
+.f-initials { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--blue-dark)); border: 2px solid rgba(37,196,204,0.3); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.05rem; color: white; flex-shrink: 0; }
+.f-name { font-weight: 700; font-size: 0.95rem; color: var(--navy); }
+.f-role { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 5px; text-transform: capitalize; margin-top: 3px; }
+.role-admin    { background: rgba(44,62,80,0.08); color: var(--navy); }
+.role-teacher  { background: rgba(37,196,204,0.12); color: var(--blue-dark); }
+.role-student  { background: rgba(240,181,74,0.15); color: #92400e; }
+.role-principal{ background: rgba(34,197,94,0.12); color: #15803d; }
 
-.feedback-stars { color: var(--gold); font-size: 0.9rem; letter-spacing: 2px; }
-.feedback-message { font-size: 0.95rem; color: #374151; line-height: 1.7; font-style: italic; }
-.feedback-date { font-size: 0.75rem; color: var(--gray); margin-top: 0.8rem; }
+.f-stars { color: var(--gold); font-size: 0.88rem; letter-spacing: 2px; }
+.f-message { font-size: 0.93rem; color: #374151; line-height: 1.75; font-style: italic; }
+.f-date { font-size: 0.72rem; color: var(--gray); margin-top: 0.7rem; }
 
 .empty-state { text-align: center; padding: 4rem 2rem; color: var(--gray); }
 .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
-.empty-state p { font-size: 1rem; }
 
 @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } .form-card { position: static; } }
 </style>
@@ -96,10 +94,9 @@ textarea { min-height: 140px; }
 <body>
 
 <nav>
-  <a href="/landing" class="logo"><div class="logo-icon">🏫</div> SchoolBridge</a>
+  <a href="/" class="logo"><div class="logo-icon">🏫</div> SchoolBridge</a>
   <div style="display:flex;gap:0.8rem">
     <a href="/home" class="btn btn-ghost">← Dashboard</a>
-    <a href="/" class="btn btn-ghost">Home</a>
   </div>
 </nav>
 
@@ -115,7 +112,7 @@ textarea { min-height: 140px; }
     <!-- FORM -->
     <div class="form-card">
       <h2>Leave a Review</h2>
-      <p class="sub">Logged in as <strong>{{ session.username }}</strong> ({{ session.role }})</p>
+      <p class="sub">Logged in as <strong>{{ session.username }}</strong> · {{ session.role }}</p>
 
       {% if success %}
       <div class="alert alert-success">✓ {{ success }}</div>
@@ -147,32 +144,35 @@ textarea { min-height: 140px; }
         <button type="submit" class="submit-btn">Submit Feedback →</button>
       </form>
     </div>
-
-    <!-- FEEDBACK LIST -->
     <div>
-      <h2 style="font-family:'Playfair Display',serif;font-size:1.4rem;margin-bottom:1.5rem;color:var(--navy)">
-        All Feedback
-        <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:0.85rem;font-weight:500;color:var(--gray);margin-left:0.5rem">
-          ({{ feedbacks|length }} review{% if feedbacks|length != 1 %}s{% endif %})
-        </span>
-      </h2>
+      <div class="list-header">
+        <h2>All Reviews</h2>
+        <span class="count-pill">{{ feedbacks|length }} review{% if feedbacks|length != 1 %}s{% endif %}</span>
+      </div>
 
       {% if feedbacks %}
       <div class="feedback-list">
         {% for f in feedbacks %}
-        <div class="feedback-item" style="animation-delay: {{ loop.index0 * 0.08 }}s">
-          <div class="feedback-header">
-            <div class="feedback-author-info">
-              <div class="avatar">{{ f.name[0].upper() }}</div>
+        <div class="f-item" style="animation-delay:{{ loop.index0 * 0.06 }}s">
+          <div class="f-header">
+            <div class="f-author">
+              {% if f.profile_pic %}
+                <img class="f-avatar"
+                  src="{{ url_for('static', filename=f.profile_pic) }}"
+                  alt="{{ f.name }}"
+                  onerror="this.outerHTML='<div class=\'f-initials\'>{{ f.name[0].upper() }}</div>'">
+              {% else %}
+                <div class="f-initials">{{ f.name[0].upper() }}</div>
+              {% endif %}
               <div>
-                <div class="author-name">{{ f.name }}</div>
-                <span class="author-role-badge role-{{ f.role }}">{{ f.role }}</span>
+                <div class="f-name">{{ f.name }}</div>
+                <span class="f-role role-{{ f.role }}">{{ f.role }}</span>
               </div>
             </div>
-            <div class="feedback-stars">{{ '★' * f.rating }}{{ '☆' * (5 - f.rating) }}</div>
+            <div class="f-stars">{{ '★' * f.rating }}{{ '☆' * (5 - f.rating) }}</div>
           </div>
-          <div class="feedback-message">"{{ f.message }}"</div>
-          <div class="feedback-date">{{ f.created_at }}</div>
+          <div class="f-message">"{{ f.message }}"</div>
+          <div class="f-date">{{ f.created_at }}</div>
         </div>
         {% endfor %}
       </div>
