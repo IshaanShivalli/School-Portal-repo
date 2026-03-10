@@ -221,16 +221,43 @@ def delete_user():
     username = request.form.get("username")
     if not username:
         return redirect(url_for("admin_dashboard"))
-    user = db.execute("SELECT id, is_admin FROM users WHERE username = ?", username)
+    user = db.execute("SELECT id, is_admin, role FROM users WHERE username = ?", username)
     if not user or user[0]["is_admin"] == 1:
         return redirect(url_for("admin_dashboard"))
     uid = user[0]["id"]
-    db.execute("DELETE FROM messages WHERE sender_id = ? OR recipient_id = ?", uid, uid)
-    db.execute("DELETE FROM grades WHERE user_id = ?", uid)
-    db.execute("DELETE FROM circulars_seen WHERE user_id = ?", uid)
-    db.execute("DELETE FROM homework_seen WHERE user_id = ?", uid)
-    db.execute("DELETE FROM news_seen WHERE user_id = ?", uid)
-    db.execute("DELETE FROM users WHERE id = ?", uid)
+    role = user[0]["role"]
+
+    if role == "principal":
+        school = db.execute("SELECT id FROM schools WHERE principal_id = ?", uid)
+        if school:
+            school_id = school[0]["id"]
+            users_in_school = db.execute("SELECT id FROM users WHERE school_id = ?", school_id)
+            user_ids = [u["id"] for u in users_in_school] + [uid]
+            if user_ids:
+                placeholders = ", ".join(["?"] * len(user_ids))
+                db.execute(f"DELETE FROM messages WHERE sender_id IN ({placeholders}) OR recipient_id IN ({placeholders})", *user_ids, *user_ids)
+                db.execute(f"DELETE FROM grades WHERE user_id IN ({placeholders})", *user_ids)
+                db.execute(f"DELETE FROM circulars_seen WHERE user_id IN ({placeholders})", *user_ids)
+                db.execute(f"DELETE FROM homework_seen WHERE user_id IN ({placeholders})", *user_ids)
+                db.execute(f"DELETE FROM news_seen WHERE user_id IN ({placeholders})", *user_ids)
+                db.execute(f"DELETE FROM attendance WHERE student_id IN ({placeholders}) OR marked_by IN ({placeholders})", *user_ids, *user_ids)
+                db.execute(f"DELETE FROM library_records WHERE student_id IN ({placeholders}) OR librarian_id IN ({placeholders})", *user_ids, *user_ids)
+                db.execute(f"DELETE FROM results WHERE student_id IN ({placeholders}) OR sender_id IN ({placeholders})", *user_ids, *user_ids)
+                db.execute(f"DELETE FROM reports WHERE student_id IN ({placeholders}) OR sender_id IN ({placeholders})", *user_ids, *user_ids)
+                db.execute(f"DELETE FROM circulars WHERE sender_id IN ({placeholders})", *user_ids)
+                db.execute(f"DELETE FROM homework WHERE sender_id IN ({placeholders})", *user_ids)
+                db.execute(f"DELETE FROM news WHERE sender_id IN ({placeholders})", *user_ids)
+                db.execute(f"DELETE FROM users WHERE id IN ({placeholders})", *user_ids)
+            db.execute("DELETE FROM schools WHERE id = ?", school_id)
+        else:
+            db.execute("DELETE FROM users WHERE id = ?", uid)
+    else:
+        db.execute("DELETE FROM messages WHERE sender_id = ? OR recipient_id = ?", uid, uid)
+        db.execute("DELETE FROM grades WHERE user_id = ?", uid)
+        db.execute("DELETE FROM circulars_seen WHERE user_id = ?", uid)
+        db.execute("DELETE FROM homework_seen WHERE user_id = ?", uid)
+        db.execute("DELETE FROM news_seen WHERE user_id = ?", uid)
+        db.execute("DELETE FROM users WHERE id = ?", uid)
     return redirect(url_for("admin_dashboard"))
 
 def admin_canteen():

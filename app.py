@@ -141,6 +141,10 @@ def init_db():
     if "name" not in school_cols:
         db.execute("ALTER TABLE schools ADD COLUMN name TEXT DEFAULT 'Unknown School'")
 
+    grade_cols = {c["name"] for c in db.execute("SELECT name FROM pragma_table_info('grades')")}
+    if "roll_number" not in grade_cols:
+        db.execute("ALTER TABLE grades ADD COLUMN roll_number TEXT")
+
     # ── NEW TABLES ──────────────────────────────────────────────────────────
     db.execute("""
         CREATE TABLE IF NOT EXISTS results (

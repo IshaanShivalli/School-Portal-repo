@@ -51,11 +51,14 @@
       <button type="submit" class="btn-s">Save Attendance</button>
     </div>
     <table class="att-table">
-      <thead><tr><th>Student</th><th>Grade</th><th>Section</th><th>Status</th></tr></thead>
+      <thead><tr><th>Student</th><th>Roll No.</th><th>Grade</th><th>Section</th><th>Status</th></tr></thead>
       <tbody>
         {% for s in students %}
         <tr>
           <td><strong>{{ s.username }}</strong></td>
+          <td>
+            <input type="text" name="roll_{{ s.id }}" value="{{ s.roll_number or '' }}" placeholder="Roll #" style="width:90px;">
+          </td>
           <td>{{ s.grade }}</td>
           <td>{{ s.section }}</td>
           <td>

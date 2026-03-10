@@ -38,11 +38,8 @@
     <form method="POST">
       <input type="hidden" name="action" value="issue">
       <div class="frow">
-        <div class="fg"><label>Student</label>
-          <select name="student_id" required>
-            <option value="">— Select —</option>
-            {% for s in students %}<option value="{{ s.id }}">{{ s.username }} (Gr.{{ s.grade }}{{ s.section }})</option>{% endfor %}
-          </select>
+        <div class="fg"><label>Student Roll No.</label>
+          <input type="text" name="roll_number" placeholder="Roll number" required>
         </div>
         <div class="fg"><label>Book Title</label>
           <input type="text" name="book_title" placeholder="Book title" required>
@@ -63,12 +60,8 @@
     </form>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" onclick="showTab('active',this)">📤 Currently Issued ({{ active|length }})</button>
-    <button class="tab" onclick="showTab('history',this)">📋 History</button>
-  </div>
-
-  <div class="panel active" id="panel-active">
+  <div style="margin-bottom:1rem;font-weight:700;color:#2c3e50;">Currently Issued ({{ active|length }})</div>
+  <div>
     {% if active %}
     <table class="ltable">
       <thead><tr><th>Student</th><th>Grade</th><th>Book</th><th>Author</th><th>Issued</th><th>Due</th><th>Status</th><th>Return</th></tr></thead>
@@ -97,7 +90,8 @@
     {% else %}<p style="color:#94a3b8;font-size:.9rem;">No books currently issued.</p>{% endif %}
   </div>
 
-  <div class="panel" id="panel-history">
+  <div style="margin:1.6rem 0 1rem;font-weight:700;color:#2c3e50;">History</div>
+  <div>
     {% if history %}
     <table class="ltable">
       <thead><tr><th>Student</th><th>Grade</th><th>Book</th><th>Issued</th><th>Due</th><th>Returned</th><th>Status</th></tr></thead>
@@ -118,12 +112,4 @@
     {% else %}<p style="color:#94a3b8;font-size:.9rem;">No history yet.</p>{% endif %}
   </div>
 </div>
-<script>
-function showTab(name,btn){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('panel-'+name).classList.add('active');
-  btn.classList.add('active');
-}
-</script>
 {% endblock %}

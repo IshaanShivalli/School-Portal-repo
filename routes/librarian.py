@@ -32,22 +32,34 @@ def librarian_library():
         action = request.form.get("action", "")
 
         if action == "issue":
-            student_id  = request.form.get("student_id", "").strip()
+            roll_number = request.form.get("roll_number", "").strip()
             book_title  = request.form.get("book_title", "").strip()
             author      = request.form.get("author", "").strip()
             issued_date = request.form.get("issued_date", str(date.today()))
             days        = int(request.form.get("days", 14))
             due_date    = str(date.fromisoformat(issued_date) + timedelta(days=days))
 
-            if not student_id or not book_title:
-                error = "Student and book title are required."
+            if not roll_number or not book_title:
+                error = "Roll number and book title are required."
             else:
+                student = db.execute("""
+                    SELECT u.id, u.username
+                    FROM users u
+                    JOIN grades g ON u.id = g.user_id
+                    WHERE g.roll_number = ?
+                    LIMIT 1
+                """, roll_number)
+                if not student:
+                    error = "No student found with that roll number."
+                    return render_template("librarian_library.html",
+                                           students=students, active=active, history=history,
+                                           today=today, success=success, error=error)
                 db.execute(
                     "INSERT INTO library_records (student_id, librarian_id, book_title, author, issued_date, due_date) "
                     "VALUES (?, ?, ?, ?, ?, ?)",
-                    int(student_id), session["user_id"], book_title, author, issued_date, due_date
+                    int(student[0]["id"]), session["user_id"], book_title, author, issued_date, due_date
                 )
-                success = f"Book '{book_title}' issued!"
+                success = f"Book '{book_title}' issued to {student[0]['username']}!"
 
         elif action == "return":
             record_id = request.form.get("record_id", "").strip()

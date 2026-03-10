@@ -225,11 +225,19 @@ def teacher_attendance():
                         "INSERT OR REPLACE INTO attendance (student_id, marked_by, date, status) VALUES (?, ?, ?, ?)",
                         int(sid), session["user_id"], att_date, val
                     )
+            if key.startswith("roll_"):
+                sid = key.replace("roll_", "")
+                roll = val.strip()
+                if roll:
+                    db.execute(
+                        "UPDATE grades SET roll_number = ? WHERE user_id = ?",
+                        roll, int(sid)
+                    )
         success = f"Attendance saved for {att_date}!"
 
     grades = db.execute("SELECT DISTINCT grade FROM grades ORDER BY grade")
     q = """
-        SELECT u.id, u.username, g.grade, g.section
+        SELECT u.id, u.username, g.grade, g.section, g.roll_number
         FROM users u JOIN grades g ON u.id = g.user_id
         WHERE u.role = 'student'
     """

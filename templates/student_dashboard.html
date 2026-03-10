@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+﻿{% extends 'layout.html' %}
 {% block title %}Student Dashboard{% endblock %}
 {% block body %}
 <style>
@@ -22,12 +22,13 @@
 .sb-msg.err { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
 .sb-msg.ok  { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
 
-/* TABS */
-.tabs { display:flex; gap:.3rem; flex-wrap:wrap; border-bottom: 2px solid rgba(44,62,80,.08); margin-bottom:1.5rem; }
-.tab  { padding: .6rem 1rem; border-radius: 8px 8px 0 0; font-size:.84rem; font-weight:600; cursor:pointer; border:none; background:transparent; color:#64748b; transition:all .2s; position:relative; bottom:-2px; border-bottom:2px solid transparent; font-family:inherit; display:flex; align-items:center; gap:.35rem; }
-.tab:hover { color:#25C4CC; background:rgba(37,196,204,.06); }
-.tab.active { color:#25C4CC; border-bottom-color:#25C4CC; background:rgba(37,196,204,.06); }
-.tab .tbadge { background:#ef4444; color:white; font-size:.62rem; font-weight:700; padding:.1rem .38rem; border-radius:8px; }
+/* ICON NAV */
+.icon-bar { display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1.5rem; }
+.icon-btn { display:flex; align-items:center; gap:.5rem; padding:.6rem .9rem; border-radius:10px; border:1px solid rgba(44,62,80,.12); background:white; cursor:pointer; font-weight:700; font-size:.85rem; color:#2c3e50; transition:all .2s; }
+.icon-btn img { width:20px; height:20px; object-fit:contain; }
+.icon-btn:hover { border-color:#25C4CC; color:#25C4CC; box-shadow:0 4px 12px rgba(37,196,204,.18); }
+.icon-btn.active { border-color:#25C4CC; background:rgba(37,196,204,.08); color:#25C4CC; }
+.ibadge { background:#ef4444; color:white; font-size:.62rem; font-weight:700; padding:.1rem .38rem; border-radius:8px; margin-left:.15rem; }
 
 .panel { display:none; }
 .panel.active { display:block; }
@@ -90,13 +91,6 @@
 .citem .cpr { font-size:.82rem; color:#25C4CC; font-weight:600; }
 .day-title { font-size:.95rem; font-weight:800; color:#2c3e50; margin:1.3rem 0 .7rem; }
 
-/* email form */
-.email-form { background:white; border-radius:14px; padding:1.8rem; border:1px solid rgba(44,62,80,.08); margin-bottom:1.3rem; }
-.email-form h3 { font-size:1rem; font-weight:700; color:#2c3e50; margin-bottom:1rem; }
-.email-form input, .email-form textarea { width:100%; padding:.7rem .95rem; border-radius:9px; border:1.5px solid rgba(37,196,204,.2); font-size:.88rem; margin-bottom:.75rem; outline:none; font-family:inherit; transition:border-color .2s; }
-.email-form input:focus, .email-form textarea:focus { border-color:#25C4CC; }
-.email-form textarea { min-height:95px; resize:vertical; }
-
 /* calendar */
 .cal-wrap { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
 .cal-box { background:white; border-radius:14px; padding:1.3rem; border:1px solid rgba(44,62,80,.08); }
@@ -124,16 +118,39 @@
   .att-grid{grid-template-columns:repeat(2,1fr);}
   .cal-wrap{grid-template-columns:1fr;}
 }
+
+body.dark-mode .sb-setup,
+body.dark-mode .card,
+body.dark-mode .rtable,
+body.dark-mode .info-table,
+body.dark-mode .cal-box,
+body.dark-mode .ev-item,
+body.dark-mode .att-stat,
+body.dark-mode .citem,
+body.dark-mode .att-bar-wrap { background:#1b1b1b; border-color:#2a2a2a; color:#e5e7eb; }
+body.dark-mode .card:hover { border-color:#1f8f94; }
+body.dark-mode .card-title,
+body.dark-mode .card-body,
+body.dark-mode .card-sub,
+body.dark-mode .att-stat .lbl,
+body.dark-mode .rtable td,
+body.dark-mode .rtable th,
+body.dark-mode .info-table th,
+body.dark-mode .info-table td { color:#e5e7eb; }
+body.dark-mode .sb-banner { background:linear-gradient(135deg,#0f766e,#0b4f4f); }
+body.dark-mode .sb-role-badge { background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.2); }
+body.dark-mode .icon-btn { background:#1b1b1b; border-color:#2a2a2a; color:#e5e7eb; }
+body.dark-mode .icon-btn.active { background:rgba(31,143,148,.22); border-color:#1f8f94; color:#9ee7e9; }
 </style>
 
 <div class="sb">
 
-{% if error %}<div class="sb-msg err">⚠ {{ error }}</div>{% endif %}
-{% if message %}<div class="sb-msg ok">✓ {{ message }}</div>{% endif %}
+{% if error %}<div class="sb-msg err">? {{ error }}</div>{% endif %}
+{% if message %}<div class="sb-msg ok">? {{ message }}</div>{% endif %}
 
 {% if not info_submitted %}
 <div class="sb-setup">
-  <h2>Welcome to SchoolBridge! 👋</h2>
+  <h2>Welcome to SchoolBridge! ??</h2>
   <p>Fill in your details to get started.</p>
   <form method="post">
     <div class="sf-group"><label>Full Name</label>
@@ -144,7 +161,7 @@
       <input type="text" name="section" placeholder="e.g. A" required></div>
     <div class="sf-group"><label>Date of Birth</label>
       <input type="date" name="dob" required></div>
-    <button type="submit" class="sf-submit">Save & Continue →</button>
+    <button type="submit" class="sf-submit">Save & Continue ?</button>
   </form>
 </div>
 
@@ -152,31 +169,30 @@
 
 <div class="sb-banner">
   <div>
-    <h1>Welcome back, {{ session.username }}! 👋</h1>
+    <h1>Welcome back, {{ session.username }}! ??</h1>
     <p>Grade {{ student_info.grade }} · Section {{ student_info.section }}</p>
   </div>
-  <div class="sb-role-badge">🎓 Student</div>
+  <div class="sb-role-badge">?? Student</div>
 </div>
 
-<div class="tabs">
-  <button class="tab active" onclick="showTab('messages',this)">💬 Messages{% if counts and counts.inbox_unread %}<span class="tbadge">{{ counts.inbox_unread }}</span>{% endif %}</button>
-  <button class="tab" onclick="showTab('homework',this)">📝 Homework{% if counts and counts.homework_unread %}<span class="tbadge">{{ counts.homework_unread }}</span>{% endif %}</button>
-  <button class="tab" onclick="showTab('circulars',this)">📋 Circulars{% if counts and counts.circulars_unread %}<span class="tbadge">{{ counts.circulars_unread }}</span>{% endif %}</button>
-  <button class="tab" onclick="showTab('results',this)">📊 Results</button>
-  <button class="tab" onclick="showTab('attendance',this)">🗓 Attendance</button>
-  <button class="tab" onclick="showTab('library',this)">📚 Library</button>
-  <button class="tab" onclick="showTab('canteen',this)">🍽 Canteen</button>
-  <button class="tab" onclick="showTab('calendar',this)">📅 Calendar</button>
-  <button class="tab" onclick="showTab('email',this)">✉ Email</button>
-  <button class="tab" onclick="showTab('reports',this)">📁 Reports</button>
-  <button class="tab" onclick="showTab('info',this)">👤 My Info</button>
+<div class="icon-bar">
+  <button class="icon-btn active" onclick="showTab('messages',this)"><img src="{{ url_for('static', filename='mail.png') }}" alt=""> Messages{% if counts and counts.inbox_unread %}<span class="ibadge">{{ counts.inbox_unread }}</span>{% endif %}</button>
+  <button class="icon-btn" onclick="showTab('homework',this)"><img src="{{ url_for('static', filename='homework.png') }}" alt=""> Homework{% if counts and counts.homework_unread %}<span class="ibadge">{{ counts.homework_unread }}</span>{% endif %}</button>
+  <button class="icon-btn" onclick="showTab('circulars',this)"><img src="{{ url_for('static', filename='list.png') }}" alt=""> Circulars{% if counts and counts.circulars_unread %}<span class="ibadge">{{ counts.circulars_unread }}</span>{% endif %}</button>
+  <button class="icon-btn" onclick="showTab('results',this)"><img src="{{ url_for('static', filename='comments.png') }}" alt=""> Results</button>
+  <button class="icon-btn" onclick="showTab('attendance',this)"><img src="{{ url_for('static', filename='list.png') }}" alt=""> Attendance</button>
+  <button class="icon-btn" onclick="showTab('library',this)"><img src="{{ url_for('static', filename='list.png') }}" alt=""> Library</button>
+  <button class="icon-btn" onclick="showTab('canteen',this)"><img src="{{ url_for('static', filename='comments.png') }}" alt=""> Canteen</button>
+  <button class="icon-btn" onclick="showTab('calendar',this)"><img src="{{ url_for('static', filename='email.png') }}" alt=""> Calendar</button>
+  <button class="icon-btn" onclick="showTab('reports',this)"><img src="{{ url_for('static', filename='messages.png') }}" alt=""> Reports</button>
+  <button class="icon-btn" onclick="showTab('info',this)"><img src="{{ url_for('static', filename='settings.png') }}" alt=""> My Info</button>
 </div>
 
-{# ── MESSAGES ── #}
+{# -- MESSAGES -- #}
 <div class="panel active" id="panel-messages">
   <div class="action-row">
-    <a href="{{ url_for('send_request') }}" class="btn-teal">✉ Message Teacher</a>
-    <a href="{{ url_for('student_inbox') }}" class="btn-outline">📥 Full Inbox{% if counts and counts.inbox_unread %} ({{ counts.inbox_unread }}){% endif %}</a>
+    <a href="{{ url_for('send_request') }}" class="btn-teal">? Message Teacher</a>
+    <a href="{{ url_for('student_inbox') }}" class="btn-outline">?? Full Inbox{% if counts and counts.inbox_unread %} ({{ counts.inbox_unread }}){% endif %}</a>
   </div>
   {% if messages %}
   <div class="cards">
@@ -190,13 +206,13 @@
     </div>
     {% endfor %}
   </div>
-  {% else %}<div class="empty"><span class="ei">💬</span><p>No messages yet.</p></div>{% endif %}
+  {% else %}<div class="empty"><span class="ei">??</span><p>No messages yet.</p></div>{% endif %}
 </div>
 
-{# ── HOMEWORK ── #}
+{# -- HOMEWORK -- #}
 <div class="panel" id="panel-homework">
   <div class="action-row">
-    <a href="{{ url_for('student_homework') }}" class="btn-outline">📝 Full Homework Page</a>
+    <a href="{{ url_for('student_homework') }}" class="btn-outline">?? Full Homework Page</a>
   </div>
   {% if homework_list %}
   <div class="cards">
@@ -207,17 +223,17 @@
         <span class="pill p-gold">Gr.{{ h.grade }}</span>
       </div>
       <div class="card-body">{{ h.body }}</div>
-      <div class="card-foot"><span>{{ h.created_at }}</span>{% if h.attachment %}<a href="{{ url_for('static', filename=h.attachment) }}" class="dl-link">📎 Download</a>{% endif %}</div>
+      <div class="card-foot"><span>{{ h.created_at }}</span>{% if h.attachment %}<a href="{{ url_for('static', filename=h.attachment) }}" class="dl-link">?? Download</a>{% endif %}</div>
     </div>
     {% endfor %}
   </div>
-  {% else %}<div class="empty"><span class="ei">📝</span><p>No homework assigned yet.</p></div>{% endif %}
+  {% else %}<div class="empty"><span class="ei">??</span><p>No homework assigned yet.</p></div>{% endif %}
 </div>
 
-{# ── CIRCULARS ── #}
+{# -- CIRCULARS -- #}
 <div class="panel" id="panel-circulars">
   <div class="action-row">
-    <a href="{{ url_for('student_circulars') }}" class="btn-outline">📋 Full Circulars Page</a>
+    <a href="{{ url_for('student_circulars') }}" class="btn-outline">?? Full Circulars Page</a>
   </div>
   {% if circulars_list %}
   <div class="cards">
@@ -228,19 +244,19 @@
         <span class="pill p-purple">Circular</span>
       </div>
       <div class="card-body">{{ c.body }}</div>
-      <div class="card-foot"><span>{{ c.created_at }}</span>{% if c.attachment %}<a href="{{ url_for('static', filename=c.attachment) }}" class="dl-link">📎 Download</a>{% endif %}</div>
+      <div class="card-foot"><span>{{ c.created_at }}</span>{% if c.attachment %}<a href="{{ url_for('static', filename=c.attachment) }}" class="dl-link">?? Download</a>{% endif %}</div>
     </div>
     {% endfor %}
   </div>
-  {% else %}<div class="empty"><span class="ei">📋</span><p>No circulars for your grade yet.</p></div>{% endif %}
+  {% else %}<div class="empty"><span class="ei">??</span><p>No circulars for your grade yet.</p></div>{% endif %}
 </div>
 
-{# ── RESULTS ── #}
+{# -- RESULTS -- #}
 <div class="panel" id="panel-results">
   {% if results %}
     {% set exams = results | groupby('exam_name') %}
     {% for exam, subjects in exams %}
-    <div class="exam-head">📊 {{ exam }}</div>
+    <div class="exam-head">?? {{ exam }}</div>
     <table class="rtable" style="margin-bottom:1.5rem;">
       <thead><tr><th>Subject</th><th>Marks</th><th>Out Of</th><th>Grade</th><th>Remarks</th></tr></thead>
       <tbody>
@@ -256,10 +272,10 @@
       </tbody>
     </table>
     {% endfor %}
-  {% else %}<div class="empty"><span class="ei">📊</span><p>No results published yet. Your teacher will upload them here.</p></div>{% endif %}
+  {% else %}<div class="empty"><span class="ei">??</span><p>No results published yet. Your teacher will upload them here.</p></div>{% endif %}
 </div>
 
-{# ── ATTENDANCE ── #}
+{# -- ATTENDANCE -- #}
 <div class="panel" id="panel-attendance">
   {% if attendance_summary %}
   <div class="att-grid">
@@ -280,34 +296,34 @@
       {% for a in attendance_records %}
       <tr>
         <td>{{ a.date }}</td>
-        <td>{% if a.status=='present'%}<span class="pill p-green">✓ Present</span>{% elif a.status=='absent'%}<span class="pill p-red">✗ Absent</span>{% else %}<span class="pill p-gold">⏱ Late</span>{% endif %}</td>
+        <td>{% if a.status=='present'%}<span class="pill p-green">? Present</span>{% elif a.status=='absent'%}<span class="pill p-red">? Absent</span>{% else %}<span class="pill p-gold">? Late</span>{% endif %}</td>
         <td>{{ a.marked_by or 'Teacher' }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-  {% else %}<div class="empty"><span class="ei">🗓</span><p>No attendance records yet. Your teacher will mark attendance here.</p></div>{% endif %}
+  {% else %}<div class="empty"><span class="ei">??</span><p>No attendance records yet. Your teacher will mark attendance here.</p></div>{% endif %}
 </div>
 
-{# ── LIBRARY ── #}
+{# -- LIBRARY -- #}
 <div class="panel" id="panel-library">
   {% if library_records %}
   <div class="cards">
     {% for b in library_records %}
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div><div class="card-title">📖 {{ b.book_title }}</div><div class="card-sub">by {{ b.author or 'Unknown' }}</div></div>
+        <div><div class="card-title">?? {{ b.book_title }}</div><div class="card-sub">by {{ b.author or 'Unknown' }}</div></div>
         {% if b.returned_date %}<span class="pill p-green">Returned</span>{% else %}<span class="pill p-gold">Borrowed</span>{% endif %}
       </div>
       <div class="card-foot"><span>Issued: {{ b.issued_date }}</span><span>Due: {{ b.due_date }}</span></div>
-      {% if not b.returned_date %}<div style="margin-top:.5rem;font-size:.76rem;color:#dc2626;font-weight:600;">⚠ Return by {{ b.due_date }}</div>{% endif %}
+      {% if not b.returned_date %}<div style="margin-top:.5rem;font-size:.76rem;color:#dc2626;font-weight:600;">? Return by {{ b.due_date }}</div>{% endif %}
     </div>
     {% endfor %}
   </div>
-  {% else %}<div class="empty"><span class="ei">📚</span><p>No library records yet. The librarian will update this when you borrow books.</p></div>{% endif %}
+  {% else %}<div class="empty"><span class="ei">??</span><p>No library records yet. The librarian will update this when you borrow books.</p></div>{% endif %}
 </div>
 
-{# ── CANTEEN ── #}
+{# -- CANTEEN -- #}
 <div class="panel" id="panel-canteen">
   {% if canteen_menu %}
     {% set days = canteen_menu | groupby('day_of_week') %}
@@ -316,17 +332,17 @@
     <div class="cmenu" style="margin-bottom:1rem;">
       {% for item in items %}
       <div class="citem">
-        <div class="cem">{{ item.emoji or '🍽' }}</div>
+        <div class="cem">{{ item.emoji or '??' }}</div>
         <div class="cnm">{{ item.item_name }}</div>
-        <div class="cpr">₹{{ item.price }}</div>
+        <div class="cpr">?{{ item.price }}</div>
       </div>
       {% endfor %}
     </div>
     {% endfor %}
-  {% else %}<div class="empty"><span class="ei">🍽</span><p>No canteen menu posted yet. Admin will add it here.</p></div>{% endif %}
+  {% else %}<div class="empty"><span class="ei">??</span><p>No canteen menu posted yet. Admin will add it here.</p></div>{% endif %}
 </div>
 
-{# ── CALENDAR ── #}
+{# -- CALENDAR -- #}
 <div class="panel" id="panel-calendar">
   <div class="cal-wrap">
     <div class="cal-box">
@@ -341,7 +357,7 @@
       <div class="cal-grid" id="calGrid"></div>
     </div>
     <div>
-      <h3 style="font-size:.97rem;font-weight:700;color:#2c3e50;margin-bottom:.9rem;">📅 Upcoming Events</h3>
+      <h3 style="font-size:.97rem;font-weight:700;color:#2c3e50;margin-bottom:.9rem;">?? Upcoming Events</h3>
       {% if calendar_events %}
         {% for ev in calendar_events %}
         <div class="ev-item">
@@ -349,26 +365,12 @@
           <div class="ev-info"><h4>{{ ev.title }}</h4><p>{{ ev.description or '' }}</p></div>
         </div>
         {% endfor %}
-      {% else %}<div class="empty"><span class="ei">📅</span><p>No events yet.</p></div>{% endif %}
+      {% else %}<div class="empty"><span class="ei">??</span><p>No events yet.</p></div>{% endif %}
     </div>
   </div>
 </div>
 
-{# ── EMAIL ── #}
-<div class="panel" id="panel-email">
-  <div class="email-form">
-    <h3>✉ Send Email</h3>
-    <form method="POST" action="{{ url_for('student_send_email') }}">
-      <input type="email" name="to_email" placeholder="Recipient email address" required>
-      <input type="text"  name="subject"  placeholder="Subject" required>
-      <textarea name="body" placeholder="Write your message here..."></textarea>
-      <button type="submit" class="btn-teal">Send Email →</button>
-    </form>
-  </div>
-  <p style="color:#94a3b8;font-size:.83rem;">Emails are sent through SchoolBridge's mail server. Use this to contact parents or anyone outside the portal.</p>
-</div>
-
-{# ── REPORTS ── #}
+{# -- REPORTS -- #}
 <div class="panel" id="panel-reports">
   {% if reports %}
   <div class="cards">
@@ -379,14 +381,14 @@
         <span class="pill p-blue">{{ r.report_type }}</span>
       </div>
       <div class="card-body">{{ r.description or '' }}</div>
-      <div class="card-foot"><span>{{ r.created_at }}</span>{% if r.attachment %}<a href="{{ url_for('static', filename=r.attachment) }}" class="dl-link">📎 Download</a>{% endif %}</div>
+      <div class="card-foot"><span>{{ r.created_at }}</span>{% if r.attachment %}<a href="{{ url_for('static', filename=r.attachment) }}" class="dl-link">?? Download</a>{% endif %}</div>
     </div>
     {% endfor %}
   </div>
-  {% else %}<div class="empty"><span class="ei">📁</span><p>No reports yet. Teachers will upload reports here.</p></div>{% endif %}
+  {% else %}<div class="empty"><span class="ei">??</span><p>No reports yet. Teachers will upload reports here.</p></div>{% endif %}
 </div>
 
-{# ── MY INFO ── #}
+{# -- MY INFO -- #}
 <div class="panel" id="panel-info">
   {% if student_info %}
   <table class="info-table">
@@ -407,7 +409,7 @@
 
 <script>
 function showTab(name, btn) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.icon-btn').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
   btn.classList.add('active');
@@ -439,3 +441,4 @@ function calNext(){calDate.setMonth(calDate.getMonth()+1);renderCal();}
 renderCal();
 </script>
 {% endblock %}
+

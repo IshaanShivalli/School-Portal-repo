@@ -235,6 +235,8 @@ def home():
             session["is_librarian"] = True
         else:
             session["is_librarian"] = False
+        if session.get("is_librarian"):
+            return redirect(url_for("librarian_library"))
         counts = {k: 0 for k in [
             "inbox_unread", "inbox_received", "student_unread", "student_received",
             "sent_students", "sent_admin", "sent_circulars", "sent_homework",
