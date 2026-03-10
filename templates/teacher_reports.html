@@ -1,0 +1,78 @@
+{% extends 'layout.html' %}
+{% block title %}Student Reports{% endblock %}
+{% block body %}
+<style>
+.rw { max-width:960px; margin:2rem auto; padding:0 1.2rem; }
+.rhead { font-size:1.5rem; font-weight:800; color:#2c3e50; margin-bottom:1.5rem; }
+.rf { background:white; border-radius:16px; padding:2rem; border:1px solid rgba(44,62,80,.1); margin-bottom:2rem; }
+.rf h3 { font-size:1rem; font-weight:700; color:#2c3e50; margin-bottom:1.1rem; }
+.fg { margin-bottom:.9rem; }
+.fg label { display:block; font-size:.75rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.28rem; }
+.fg input,.fg select,.fg textarea { width:100%; padding:.67rem .9rem; border-radius:9px; border:1.5px solid rgba(37,196,204,.2); font-size:.89rem; outline:none; font-family:inherit; transition:border-color .2s; }
+.fg input:focus,.fg select:focus,.fg textarea:focus { border-color:#25C4CC; }
+.frow { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:.9rem; }
+.btn-s { padding:.7rem 1.6rem; background:linear-gradient(135deg,#25C4CC,#1aa3a8); color:white; border:none; border-radius:9px; font-weight:700; cursor:pointer; font-family:inherit; }
+.msg-ok { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; border-radius:8px; padding:.68rem 1rem; margin-bottom:1rem; font-size:.87rem; }
+.msg-err { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; border-radius:8px; padding:.68rem 1rem; margin-bottom:1rem; font-size:.87rem; }
+.rtable { width:100%; border-collapse:collapse; background:white; border-radius:14px; overflow:hidden; border:1px solid rgba(44,62,80,.08); }
+.rtable th { background:linear-gradient(135deg,#25C4CC,#1aa3a8); color:white; padding:.75rem 1rem; text-align:left; font-size:.78rem; font-weight:700; }
+.rtable td { padding:.75rem 1rem; font-size:.86rem; border-top:1px solid rgba(44,62,80,.06); color:#2c3e50; }
+.rtable tr:hover td { background:#f8fafc; }
+</style>
+<div class="rw">
+  <div class="rhead">📁 Student Reports</div>
+  {% if success %}<div class="msg-ok">✓ {{ success }}</div>{% endif %}
+  {% if error %}<div class="msg-err">⚠ {{ error }}</div>{% endif %}
+  <div class="rf">
+    <h3>Post a Report</h3>
+    <form method="POST" enctype="multipart/form-data">
+      <div class="frow">
+        <div class="fg"><label>Student</label>
+          <select name="student_id" required>
+            <option value="">— Select —</option>
+            {% for s in students %}<option value="{{ s.id }}">{{ s.username }} (Gr.{{ s.grade }}{{ s.section }})</option>{% endfor %}
+          </select>
+        </div>
+        <div class="fg"><label>Report Type</label>
+          <select name="report_type" required>
+            <option value="">— Select —</option>
+            <option value="progress">Progress Report</option>
+            <option value="behaviour">Behaviour Report</option>
+            <option value="medical">Medical Note</option>
+            <option value="achievement">Achievement</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="fg"><label>Title</label>
+          <input type="text" name="title" placeholder="Report title" required>
+        </div>
+      </div>
+      <div class="fg"><label>Description</label>
+        <textarea name="description" rows="3" placeholder="Details..."></textarea>
+      </div>
+      <div class="fg"><label>Attachment (optional)</label>
+        <input type="file" name="attachment">
+      </div>
+      <button type="submit" class="btn-s">Save Report →</button>
+    </form>
+  </div>
+  <h3 style="font-size:1rem;font-weight:700;color:#2c3e50;margin-bottom:.9rem;">Posted Reports</h3>
+  {% if posted %}
+  <table class="rtable">
+    <thead><tr><th>Student</th><th>Type</th><th>Title</th><th>Description</th><th>File</th><th>Date</th></tr></thead>
+    <tbody>
+      {% for r in posted %}
+      <tr>
+        <td>{{ r.student_name }}</td>
+        <td>{{ r.report_type | capitalize }}</td>
+        <td>{{ r.title }}</td>
+        <td>{{ r.description or '—' }}</td>
+        <td>{% if r.attachment %}<a href="{{ url_for('static', filename=r.attachment) }}" style="color:#25C4CC;font-size:.8rem;">📎 Download</a>{% else %}—{% endif %}</td>
+        <td>{{ r.created_at[:10] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p style="color:#94a3b8;font-size:.9rem;">No reports posted yet.</p>{% endif %}
+</div>
+{% endblock %}

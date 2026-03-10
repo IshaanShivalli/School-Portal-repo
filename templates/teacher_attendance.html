@@ -1,0 +1,95 @@
+{% extends 'layout.html' %}
+{% block title %}Mark Attendance{% endblock %}
+{% block body %}
+<style>
+.ta-wrap { max-width: 900px; margin: 2rem auto; padding: 0 1.2rem; }
+.ta-head { font-size: 1.5rem; font-weight: 800; color: #2c3e50; margin-bottom: 1.4rem; }
+.ta-filter { background: white; border-radius: 14px; padding: 1.3rem 1.5rem; border: 1px solid rgba(44,62,80,.1); margin-bottom: 1.4rem; display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap; }
+.fg label { display:block; font-size:.76rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.3rem; }
+.fg select, .fg input { padding:.65rem .9rem; border-radius:9px; border:1.5px solid rgba(37,196,204,.2); font-size:.9rem; outline:none; font-family:inherit; }
+.fg select:focus, .fg input:focus { border-color:#25C4CC; }
+.btn-s { padding:.68rem 1.4rem; background:linear-gradient(135deg,#25C4CC,#1aa3a8); color:white; border:none; border-radius:9px; font-weight:700; cursor:pointer; font-family:inherit; }
+.msg-ok { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; border-radius:8px; padding:.7rem 1rem; margin-bottom:1rem; font-size:.88rem; }
+.att-table { width:100%; border-collapse:collapse; background:white; border-radius:14px; overflow:hidden; border:1px solid rgba(44,62,80,.08); }
+.att-table th { background:linear-gradient(135deg,#25C4CC,#1aa3a8); color:white; padding:.78rem 1rem; text-align:left; font-size:.8rem; font-weight:700; }
+.att-table td { padding:.78rem 1rem; font-size:.88rem; border-top:1px solid rgba(44,62,80,.06); color:#2c3e50; }
+.att-table tr:hover td { background:#f8fafc; }
+.att-radio { display:flex; gap:.5rem; }
+.att-radio label { display:flex; align-items:center; gap:.3rem; font-size:.82rem; font-weight:600; padding:.3rem .6rem; border-radius:6px; cursor:pointer; border:1.5px solid transparent; transition:all .15s; }
+.att-radio input[type=radio] { display:none; }
+.att-radio input[type=radio]:checked + span { font-weight:800; }
+.r-present label { border-color:rgba(34,197,94,.3); background:rgba(34,197,94,.08); color:#15803d; }
+.r-absent  label { border-color:rgba(239,68,68,.3); background:rgba(239,68,68,.08); color:#dc2626; }
+.r-late    label { border-color:rgba(240,181,74,.3); background:rgba(240,181,74,.1); color:#92400e; }
+</style>
+<div class="ta-wrap">
+  <div class="ta-head">🗓 Mark Attendance</div>
+  {% if success %}<div class="msg-ok">✓ {{ success }}</div>{% endif %}
+
+  <form method="GET" action="{{ url_for('teacher_attendance') }}" style="display:inline;">
+    <div class="ta-filter">
+      <div class="fg">
+        <label>Filter by Grade</label>
+        <select name="grade" onchange="this.form.submit()">
+          <option value="">All Grades</option>
+          {% for g in grades %}
+          <option value="{{ g.grade }}" {% if grade_filter==g.grade %}selected{% endif %}>Grade {{ g.grade }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </form>
+
+  {% if students %}
+  <form method="POST">
+    <div class="ta-filter">
+      <div class="fg">
+        <label>Attendance Date</label>
+        <input type="date" name="att_date" value="{{ today }}" required>
+      </div>
+      <input type="hidden" name="grade" value="{{ grade_filter }}">
+      <button type="submit" class="btn-s">Save Attendance</button>
+    </div>
+    <table class="att-table">
+      <thead><tr><th>Student</th><th>Grade</th><th>Section</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for s in students %}
+        <tr>
+          <td><strong>{{ s.username }}</strong></td>
+          <td>{{ s.grade }}</td>
+          <td>{{ s.section }}</td>
+          <td>
+            <div class="att-radio">
+              <div class="r-present">
+                <label>
+                  <input type="radio" name="status_{{ s.id }}" value="present" {% if existing.get(s.id)=='present' or not existing.get(s.id) %}checked{% endif %}>
+                  <span>✓ Present</span>
+                </label>
+              </div>
+              <div class="r-absent">
+                <label>
+                  <input type="radio" name="status_{{ s.id }}" value="absent" {% if existing.get(s.id)=='absent' %}checked{% endif %}>
+                  <span>✗ Absent</span>
+                </label>
+              </div>
+              <div class="r-late">
+                <label>
+                  <input type="radio" name="status_{{ s.id }}" value="late" {% if existing.get(s.id)=='late' %}checked{% endif %}>
+                  <span>⏱ Late</span>
+                </label>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div style="margin-top:1.2rem;">
+      <button type="submit" class="btn-s">💾 Save Attendance</button>
+    </div>
+  </form>
+  {% else %}
+  <p style="color:#94a3b8;font-size:.9rem;">No students found{% if grade_filter %} for Grade {{ grade_filter }}{% endif %}.</p>
+  {% endif %}
+</div>
+{% endblock %}

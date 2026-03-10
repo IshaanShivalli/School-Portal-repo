@@ -232,3 +232,81 @@ def delete_user():
     db.execute("DELETE FROM news_seen WHERE user_id = ?", uid)
     db.execute("DELETE FROM users WHERE id = ?", uid)
     return redirect(url_for("admin_dashboard"))
+
+def admin_canteen():
+    from app import db
+    if not session.get("is_admin"):
+        from flask import abort
+        abort(403)
+
+    success = ""
+    error   = ""
+    DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action == "add":
+            item_name = request.form.get("item_name", "").strip()
+            price     = request.form.get("price", "").strip()
+            emoji     = request.form.get("emoji", "🍽").strip()
+            day       = request.form.get("day_of_week", "").strip()
+            if not item_name or not price or day not in DAYS:
+                error = "All fields are required."
+            else:
+                db.execute(
+                    "INSERT INTO canteen_menu (item_name, price, emoji, day_of_week) VALUES (?, ?, ?, ?)",
+                    item_name, float(price), emoji, day
+                )
+                success = "Menu item added!"
+        elif action == "delete":
+            item_id = request.form.get("item_id")
+            if item_id:
+                db.execute("DELETE FROM canteen_menu WHERE id = ?", int(item_id))
+                success = "Item removed."
+
+    menu = db.execute(
+        "SELECT * FROM canteen_menu ORDER BY CASE day_of_week "
+        "WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 "
+        "WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 "
+        "ELSE 7 END, item_name"
+    )
+    return render_template("admin_canteen.html", menu=menu, days=DAYS,
+                           success=success, error=error)
+
+
+def admin_calendar():
+    from app import db
+    from datetime import date
+    if not session.get("is_admin"):
+        from flask import abort
+        abort(403)
+
+    success = ""
+    error   = ""
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action == "add":
+            title       = request.form.get("title", "").strip()
+            description = request.form.get("description", "").strip()
+            event_date  = request.form.get("event_date", "").strip()
+            if not title or not event_date:
+                error = "Title and date are required."
+            else:
+                db.execute(
+                    "INSERT INTO calendar_events (created_by, title, description, event_date) VALUES (?, ?, ?, ?)",
+                    session["user_id"], title, description, event_date
+                )
+                success = "Event added!"
+        elif action == "delete":
+            ev_id = request.form.get("event_id")
+            if ev_id:
+                db.execute("DELETE FROM calendar_events WHERE id = ?", int(ev_id))
+                success = "Event removed."
+
+    events = db.execute(
+        "SELECT ce.*, u.username AS creator FROM calendar_events ce "
+        "JOIN users u ON ce.created_by = u.id ORDER BY ce.event_date DESC"
+    )
+    return render_template("admin_calendar.html", events=events,
+                           today=str(date.today()),
+                           success=success, error=error)

@@ -153,7 +153,7 @@ textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,196,20
       {% if feedbacks %}
       <div class="feedback-list">
         {% for f in feedbacks %}
-        <div class="f-item" style="animation-delay:{{ loop.index0 * 0.06 }}s">
+        <div class="f-item">
           <div class="f-header">
             <div class="f-author">
               {% if f.profile_pic %}

@@ -1,101 +1,441 @@
 {% extends 'layout.html' %}
-
+{% block title %}Student Dashboard{% endblock %}
 {% block body %}
-<h1>Student Dashboard</h1>
+<style>
+.sb { max-width: 1100px; margin: 2rem auto; padding: 0 1.2rem; }
+.sb-banner { background: linear-gradient(135deg, #25C4CC 0%, #1aa3a8 100%); border-radius: 18px; padding: 1.8rem 2.2rem; color: white; margin-bottom: 1.8rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; }
+.sb-banner h1 { font-size: 1.6rem; font-weight: 800; margin: 0; }
+.sb-banner p  { margin: .3rem 0 0; opacity: .85; font-size: .9rem; }
+.sb-role-badge { background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.35); padding: .35rem .9rem; border-radius: 20px; font-size: .82rem; font-weight: 700; }
 
-{% if error %}
-    <p style="color:red">{{ error }}</p>
-{% endif %}
-{% if message %}
-    <p style="color:green">{{ message }}</p>
-{% endif %}
+.sb-setup { background: white; border-radius: 18px; padding: 2.2rem; border: 1px solid rgba(44,62,80,.1); box-shadow: 0 4px 20px rgba(0,0,0,.06); max-width: 460px; margin: 0 auto; }
+.sb-setup h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: .3rem; }
+.sb-setup p  { color: #64748b; font-size: .88rem; margin-bottom: 1.6rem; }
+.sf-group { margin-bottom: 1rem; }
+.sf-group label { display: block; font-size: .78rem; font-weight: 700; color: #2c3e50; margin-bottom: .35rem; text-transform: uppercase; letter-spacing: .05em; }
+.sf-group input, .sf-group select { width: 100%; padding: .7rem .95rem; border-radius: 9px; border: 1.5px solid rgba(37,196,204,.25); font-size: .9rem; outline: none; transition: border-color .2s; font-family: inherit; }
+.sf-group input:focus, .sf-group select:focus { border-color: #25C4CC; box-shadow: 0 0 0 3px rgba(37,196,204,.1); }
+.sf-submit { width: 100%; padding: .85rem; border-radius: 9px; background: linear-gradient(135deg,#25C4CC,#1aa3a8); color: white; font-weight: 700; font-size: .92rem; border: none; cursor: pointer; font-family: inherit; transition: all .2s; }
+.sf-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(37,196,204,.35); }
+
+.sb-msg { padding: .8rem 1.1rem; border-radius: 9px; margin-bottom: 1.1rem; font-size: .88rem; font-weight: 500; }
+.sb-msg.err { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
+.sb-msg.ok  { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
+
+/* TABS */
+.tabs { display:flex; gap:.3rem; flex-wrap:wrap; border-bottom: 2px solid rgba(44,62,80,.08); margin-bottom:1.5rem; }
+.tab  { padding: .6rem 1rem; border-radius: 8px 8px 0 0; font-size:.84rem; font-weight:600; cursor:pointer; border:none; background:transparent; color:#64748b; transition:all .2s; position:relative; bottom:-2px; border-bottom:2px solid transparent; font-family:inherit; display:flex; align-items:center; gap:.35rem; }
+.tab:hover { color:#25C4CC; background:rgba(37,196,204,.06); }
+.tab.active { color:#25C4CC; border-bottom-color:#25C4CC; background:rgba(37,196,204,.06); }
+.tab .tbadge { background:#ef4444; color:white; font-size:.62rem; font-weight:700; padding:.1rem .38rem; border-radius:8px; }
+
+.panel { display:none; }
+.panel.active { display:block; }
+
+/* cards */
+.cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1rem; }
+.card { background:white; border-radius:14px; padding:1.3rem; border:1px solid rgba(44,62,80,.08); box-shadow:0 2px 8px rgba(0,0,0,.04); transition:all .22s; }
+.card:hover { transform:translateY(-3px); box-shadow:0 8px 22px rgba(0,0,0,.1); border-color:rgba(37,196,204,.2); }
+.card-title { font-weight:700; font-size:.92rem; color:#2c3e50; }
+.card-sub   { font-size:.76rem; color:#64748b; margin-top:.15rem; }
+.card-body  { font-size:.88rem; color:#374151; line-height:1.65; margin-top:.7rem; }
+.card-foot  { margin-top:.7rem; padding-top:.7rem; border-top:1px solid rgba(44,62,80,.07); font-size:.74rem; color:#94a3b8; display:flex; align-items:center; justify-content:space-between; }
+
+.pill { display:inline-block; font-size:.68rem; font-weight:600; padding:.18rem .55rem; border-radius:5px; }
+.p-blue   { background:rgba(37,196,204,.1); color:#1aa3a8; }
+.p-gold   { background:rgba(240,181,74,.15); color:#92400e; }
+.p-green  { background:rgba(34,197,94,.12); color:#15803d; }
+.p-red    { background:rgba(239,68,68,.1); color:#dc2626; }
+.p-purple { background:rgba(139,92,246,.1); color:#7c3aed; }
+
+.dl-link { display:inline-flex; align-items:center; gap:.25rem; font-size:.78rem; font-weight:600; color:#25C4CC; text-decoration:none; }
+.dl-link:hover { text-decoration:underline; }
+
+.empty { text-align:center; padding:2.5rem 1rem; color:#94a3b8; }
+.empty .ei { font-size:2.2rem; display:block; margin-bottom:.6rem; }
+
+/* action buttons row */
+.action-row { display:flex; gap:.8rem; flex-wrap:wrap; margin-bottom:1.4rem; }
+.btn-teal { display:inline-flex; align-items:center; gap:.45rem; background:linear-gradient(135deg,#25C4CC,#1aa3a8); color:white; padding:.65rem 1.3rem; border-radius:9px; text-decoration:none; font-weight:700; font-size:.87rem; border:none; cursor:pointer; font-family:inherit; transition:all .2s; }
+.btn-teal:hover { transform:translateY(-2px); box-shadow:0 5px 16px rgba(37,196,204,.35); }
+.btn-outline { display:inline-flex; align-items:center; gap:.45rem; background:white; color:#2c3e50; padding:.65rem 1.3rem; border-radius:9px; text-decoration:none; font-weight:700; font-size:.87rem; border:1.5px solid rgba(44,62,80,.12); transition:all .2s; }
+.btn-outline:hover { border-color:#25C4CC; color:#25C4CC; }
+
+/* results table */
+.rtable { width:100%; border-collapse:collapse; background:white; border-radius:14px; overflow:hidden; border:1px solid rgba(44,62,80,.08); }
+.rtable th { background:linear-gradient(135deg,#25C4CC,#1aa3a8); color:white; padding:.8rem 1.1rem; text-align:left; font-size:.8rem; font-weight:700; letter-spacing:.04em; }
+.rtable td { padding:.8rem 1.1rem; font-size:.88rem; border-top:1px solid rgba(44,62,80,.06); color:#2c3e50; }
+.rtable tr:hover td { background:#f8fafc; }
+.gA  { color:#15803d; font-weight:700; }
+.gAp { color:#0369a1; font-weight:700; }
+.gB  { color:#1aa3a8; font-weight:700; }
+.gC  { color:#d97706; font-weight:700; }
+.gD, .gF { color:#dc2626; font-weight:700; }
+.exam-head { font-size:1rem; font-weight:800; color:#2c3e50; margin:1.5rem 0 .7rem; }
+
+/* attendance */
+.att-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.9rem; margin-bottom:1.3rem; }
+.att-stat { background:white; border-radius:12px; padding:1.1rem; border:1px solid rgba(44,62,80,.08); text-align:center; }
+.att-stat .num { font-size:1.9rem; font-weight:900; }
+.att-stat .lbl { font-size:.72rem; color:#64748b; text-transform:uppercase; letter-spacing:.06em; margin-top:.15rem; }
+.att-bar-wrap { background:#f1f5f9; border-radius:6px; height:9px; overflow:hidden; margin:.7rem 0; }
+.att-bar { height:100%; border-radius:6px; background:linear-gradient(135deg,#25C4CC,#1aa3a8); transition:width .8s ease; }
+
+/* canteen */
+.cmenu { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:.9rem; }
+.citem { background:white; border-radius:12px; padding:1.1rem; border:1px solid rgba(44,62,80,.08); text-align:center; transition:all .2s; }
+.citem:hover { transform:translateY(-2px); box-shadow:0 5px 16px rgba(0,0,0,.08); }
+.citem .cem { font-size:2.2rem; margin-bottom:.4rem; }
+.citem .cnm { font-weight:700; font-size:.87rem; color:#2c3e50; }
+.citem .cpr { font-size:.82rem; color:#25C4CC; font-weight:600; }
+.day-title { font-size:.95rem; font-weight:800; color:#2c3e50; margin:1.3rem 0 .7rem; }
+
+/* email form */
+.email-form { background:white; border-radius:14px; padding:1.8rem; border:1px solid rgba(44,62,80,.08); margin-bottom:1.3rem; }
+.email-form h3 { font-size:1rem; font-weight:700; color:#2c3e50; margin-bottom:1rem; }
+.email-form input, .email-form textarea { width:100%; padding:.7rem .95rem; border-radius:9px; border:1.5px solid rgba(37,196,204,.2); font-size:.88rem; margin-bottom:.75rem; outline:none; font-family:inherit; transition:border-color .2s; }
+.email-form input:focus, .email-form textarea:focus { border-color:#25C4CC; }
+.email-form textarea { min-height:95px; resize:vertical; }
+
+/* calendar */
+.cal-wrap { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
+.cal-box { background:white; border-radius:14px; padding:1.3rem; border:1px solid rgba(44,62,80,.08); }
+.cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:.9rem; }
+.cal-nav h3 { font-size:1rem; font-weight:700; color:#2c3e50; }
+.cal-nbtn { background:rgba(37,196,204,.1); border:none; color:#25C4CC; font-size:.95rem; width:30px; height:30px; border-radius:7px; cursor:pointer; font-weight:700; }
+.cal-header { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; margin-bottom:3px; }
+.cal-dname { text-align:center; font-size:.7rem; font-weight:700; color:#64748b; padding:.3rem; text-transform:uppercase; }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.cday { aspect-ratio:1; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:500; background:white; border:1px solid rgba(44,62,80,.06); color:#2c3e50; }
+.cday.today { background:#25C4CC; color:white; font-weight:800; }
+.cday.has-ev { background:rgba(240,181,74,.15); border-color:#f0b54a; color:#92400e; font-weight:700; }
+.cday.empty { background:transparent; border-color:transparent; }
+.ev-item { display:flex; gap:.8rem; align-items:flex-start; padding:.7rem; border-radius:9px; background:white; border:1px solid rgba(44,62,80,.07); margin-bottom:.5rem; }
+.ev-date { background:linear-gradient(135deg,#25C4CC,#1aa3a8); color:white; border-radius:7px; padding:.35rem .6rem; text-align:center; font-size:.72rem; font-weight:700; min-width:40px; }
+.ev-info h4 { font-size:.87rem; font-weight:700; color:#2c3e50; margin-bottom:.15rem; }
+.ev-info p  { font-size:.78rem; color:#64748b; }
+
+/* info table */
+.info-table { width:100%; border-collapse:collapse; background:white; border-radius:14px; overflow:hidden; border:1px solid rgba(44,62,80,.08); max-width:460px; }
+.info-table th { background:#f8fafc; padding:.78rem 1.1rem; text-align:left; font-size:.78rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.05em; }
+.info-table td { padding:.78rem 1.1rem; font-size:.88rem; border-top:1px solid rgba(44,62,80,.06); color:#2c3e50; }
+
+@media(max-width:700px){
+  .att-grid{grid-template-columns:repeat(2,1fr);}
+  .cal-wrap{grid-template-columns:1fr;}
+}
+</style>
+
+<div class="sb">
+
+{% if error %}<div class="sb-msg err">⚠ {{ error }}</div>{% endif %}
+{% if message %}<div class="sb-msg ok">✓ {{ message }}</div>{% endif %}
 
 {% if not info_submitted %}
-<div class="send-request-container">
-    <h2>Student Information</h2>
-    <form method="post">
-        <label>Name</label><br>
-        <input type="text" name="name" value="{{ name_prefill }}" readonly><br><br>
-
-        <label>Grade</label><br>
-        <input type="text" name="grade" required><br><br>
-
-        <label>Section</label><br>
-        <input type="text" name="section" required><br><br>
-
-        <label>DOB</label><br>
-        <input type="date" name="dob" required><br><br>
-
-        <button type="submit">Submit</button>
-    </form>
+<div class="sb-setup">
+  <h2>Welcome to SchoolBridge! 👋</h2>
+  <p>Fill in your details to get started.</p>
+  <form method="post">
+    <div class="sf-group"><label>Full Name</label>
+      <input type="text" name="name" value="{{ name_prefill }}" readonly></div>
+    <div class="sf-group"><label>Grade</label>
+      <input type="text" name="grade" placeholder="e.g. 10" required></div>
+    <div class="sf-group"><label>Section</label>
+      <input type="text" name="section" placeholder="e.g. A" required></div>
+    <div class="sf-group"><label>Date of Birth</label>
+      <input type="date" name="dob" required></div>
+    <button type="submit" class="sf-submit">Save & Continue →</button>
+  </form>
 </div>
+
 {% else %}
-<div class="names-list-container">
-    <h2>Messages</h2>
-    <div class="admin-actions">
-        <a href="{{ url_for('send_request') }}" class="admin-action">
-            <img src="{{ url_for('static', filename='email.png') }}" alt="Message Teacher">
-            <span>Message Teacher{% if counts %} <span class="link-badge">Sent {{ counts.sent_total }}</span>{% endif %}</span>
-        </a>
-        <a href="{{ url_for('student_inbox') }}" class="admin-action">
-            <img src="{{ url_for('static', filename='mail.png') }}" alt="Inbox">
-            <span>View Inbox{% if counts %} <span class="link-badge">Unread {{ counts.inbox_unread }}</span><span class="link-badge alt">Recv {{ counts.inbox_total }}</span>{% endif %}</span>
-        </a>
-    </div>
+
+<div class="sb-banner">
+  <div>
+    <h1>Welcome back, {{ session.username }}! 👋</h1>
+    <p>Grade {{ student_info.grade }} · Section {{ student_info.section }}</p>
+  </div>
+  <div class="sb-role-badge">🎓 Student</div>
 </div>
 
-<div class="names-list-container">
-    <h2>Student Resources</h2>
-    <div class="admin-actions">
-        <a href="{{ url_for('student_circulars') }}" class="admin-action">
-            <img src="{{ url_for('static', filename='list.png') }}" alt="Circulars">
-            <span>Circulars{% if counts %} <span class="link-badge">Unread {{ counts.circulars_unread }}</span><span class="link-badge alt">Recv {{ counts.circulars_total }}</span>{% endif %}</span>
-        </a>
-        <a href="{{ url_for('school_news') }}" class="admin-action">
-            <img src="{{ url_for('static', filename='comments.png') }}" alt="School News">
-            <span>School News{% if counts %} <span class="link-badge">Unread {{ counts.news_unread }}</span><span class="link-badge alt">Recv {{ counts.news_total }}</span>{% endif %}</span>
-        </a>
-        <a href="{{ url_for('student_homework') }}" class="admin-action">
-            <img src="{{ url_for('static', filename='homework.png') }}" alt="Homework">
-            <span>Homework{% if counts %} <span class="link-badge">Unread {{ counts.homework_unread }}</span><span class="link-badge alt">Recv {{ counts.homework_total }}</span>{% endif %}</span>
-        </a>
-    </div>
+<div class="tabs">
+  <button class="tab active" onclick="showTab('messages',this)">💬 Messages{% if counts and counts.inbox_unread %}<span class="tbadge">{{ counts.inbox_unread }}</span>{% endif %}</button>
+  <button class="tab" onclick="showTab('homework',this)">📝 Homework{% if counts and counts.homework_unread %}<span class="tbadge">{{ counts.homework_unread }}</span>{% endif %}</button>
+  <button class="tab" onclick="showTab('circulars',this)">📋 Circulars{% if counts and counts.circulars_unread %}<span class="tbadge">{{ counts.circulars_unread }}</span>{% endif %}</button>
+  <button class="tab" onclick="showTab('results',this)">📊 Results</button>
+  <button class="tab" onclick="showTab('attendance',this)">🗓 Attendance</button>
+  <button class="tab" onclick="showTab('library',this)">📚 Library</button>
+  <button class="tab" onclick="showTab('canteen',this)">🍽 Canteen</button>
+  <button class="tab" onclick="showTab('calendar',this)">📅 Calendar</button>
+  <button class="tab" onclick="showTab('email',this)">✉ Email</button>
+  <button class="tab" onclick="showTab('reports',this)">📁 Reports</button>
+  <button class="tab" onclick="showTab('info',this)">👤 My Info</button>
 </div>
 
-<div class="message-container">
-    <h2>Your Messages{% if counts %} <span class="badge-pill">{{ counts.total }}</span>{% endif %}</h2>
-    {% for message in messages %}
-        <div class="message-item">
-            <p>{{ message.sender }}: {{ message.content }}</p>
-            <button>Delete</button>
-        </div>
+{# ── MESSAGES ── #}
+<div class="panel active" id="panel-messages">
+  <div class="action-row">
+    <a href="{{ url_for('send_request') }}" class="btn-teal">✉ Message Teacher</a>
+    <a href="{{ url_for('student_inbox') }}" class="btn-outline">📥 Full Inbox{% if counts and counts.inbox_unread %} ({{ counts.inbox_unread }}){% endif %}</a>
+  </div>
+  {% if messages %}
+  <div class="cards">
+    {% for m in messages %}
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><div class="card-title">{{ m.sender }}</div><div class="card-sub">{{ m.created_at }}</div></div>
+        <span class="pill p-blue">Message</span>
+      </div>
+      <div class="card-body">{{ m.content }}</div>
+    </div>
     {% endfor %}
+  </div>
+  {% else %}<div class="empty"><span class="ei">💬</span><p>No messages yet.</p></div>{% endif %}
 </div>
 
-<div class="grades-table-container">
-    <h2>Your Information</h2>
-    {% if student_info %}
-    <table class="grades-table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Grade</th>
-                <th>Section</th>
-                <th>DOB</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>{{ student_info.name }}</td>
-                <td>{{ student_info.grade }}</td>
-                <td>{{ student_info.section }}</td>
-                <td>{{ student_info.dob }}</td>
-            </tr>
-        </tbody>
-    </table>
-    {% else %}
-        <p>No information submitted yet.</p>
-    {% endif %}
+{# ── HOMEWORK ── #}
+<div class="panel" id="panel-homework">
+  <div class="action-row">
+    <a href="{{ url_for('student_homework') }}" class="btn-outline">📝 Full Homework Page</a>
+  </div>
+  {% if homework_list %}
+  <div class="cards">
+    {% for h in homework_list %}
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><div class="card-title">{{ h.title }}</div><div class="card-sub">By {{ h.sender }}</div></div>
+        <span class="pill p-gold">Gr.{{ h.grade }}</span>
+      </div>
+      <div class="card-body">{{ h.body }}</div>
+      <div class="card-foot"><span>{{ h.created_at }}</span>{% if h.attachment %}<a href="{{ url_for('static', filename=h.attachment) }}" class="dl-link">📎 Download</a>{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<div class="empty"><span class="ei">📝</span><p>No homework assigned yet.</p></div>{% endif %}
 </div>
+
+{# ── CIRCULARS ── #}
+<div class="panel" id="panel-circulars">
+  <div class="action-row">
+    <a href="{{ url_for('student_circulars') }}" class="btn-outline">📋 Full Circulars Page</a>
+  </div>
+  {% if circulars_list %}
+  <div class="cards">
+    {% for c in circulars_list %}
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><div class="card-title">{{ c.title }}</div><div class="card-sub">By {{ c.sender }}</div></div>
+        <span class="pill p-purple">Circular</span>
+      </div>
+      <div class="card-body">{{ c.body }}</div>
+      <div class="card-foot"><span>{{ c.created_at }}</span>{% if c.attachment %}<a href="{{ url_for('static', filename=c.attachment) }}" class="dl-link">📎 Download</a>{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<div class="empty"><span class="ei">📋</span><p>No circulars for your grade yet.</p></div>{% endif %}
+</div>
+
+{# ── RESULTS ── #}
+<div class="panel" id="panel-results">
+  {% if results %}
+    {% set exams = results | groupby('exam_name') %}
+    {% for exam, subjects in exams %}
+    <div class="exam-head">📊 {{ exam }}</div>
+    <table class="rtable" style="margin-bottom:1.5rem;">
+      <thead><tr><th>Subject</th><th>Marks</th><th>Out Of</th><th>Grade</th><th>Remarks</th></tr></thead>
+      <tbody>
+        {% for r in subjects %}
+        <tr>
+          <td><strong>{{ r.subject }}</strong></td>
+          <td>{{ r.marks }}</td>
+          <td>{{ r.out_of }}</td>
+          <td class="g{{ r.grade | replace('+','p') }}">{{ r.grade }}</td>
+          <td>{{ r.remarks or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endfor %}
+  {% else %}<div class="empty"><span class="ei">📊</span><p>No results published yet. Your teacher will upload them here.</p></div>{% endif %}
+</div>
+
+{# ── ATTENDANCE ── #}
+<div class="panel" id="panel-attendance">
+  {% if attendance_summary %}
+  <div class="att-grid">
+    <div class="att-stat"><div class="num" style="color:#15803d">{{ attendance_summary.present }}</div><div class="lbl">Present</div></div>
+    <div class="att-stat"><div class="num" style="color:#dc2626">{{ attendance_summary.absent }}</div><div class="lbl">Absent</div></div>
+    <div class="att-stat"><div class="num" style="color:#d97706">{{ attendance_summary.late }}</div><div class="lbl">Late</div></div>
+    <div class="att-stat"><div class="num" style="color:#25C4CC">{{ attendance_summary.percent }}%</div><div class="lbl">Rate</div></div>
+  </div>
+  <div style="background:white;border-radius:12px;padding:1.1rem;border:1px solid rgba(44,62,80,.08);margin-bottom:1.3rem;">
+    <div style="display:flex;justify-content:space-between;font-size:.83rem;font-weight:600;color:#2c3e50;margin-bottom:.35rem;"><span>Attendance Rate</span><span>{{ attendance_summary.percent }}%</span></div>
+    <div class="att-bar-wrap"><div class="att-bar" style="width:{{ attendance_summary.percent }}%"></div></div>
+  </div>
+  {% endif %}
+  {% if attendance_records %}
+  <table class="rtable">
+    <thead><tr><th>Date</th><th>Status</th><th>Marked By</th></tr></thead>
+    <tbody>
+      {% for a in attendance_records %}
+      <tr>
+        <td>{{ a.date }}</td>
+        <td>{% if a.status=='present'%}<span class="pill p-green">✓ Present</span>{% elif a.status=='absent'%}<span class="pill p-red">✗ Absent</span>{% else %}<span class="pill p-gold">⏱ Late</span>{% endif %}</td>
+        <td>{{ a.marked_by or 'Teacher' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<div class="empty"><span class="ei">🗓</span><p>No attendance records yet. Your teacher will mark attendance here.</p></div>{% endif %}
+</div>
+
+{# ── LIBRARY ── #}
+<div class="panel" id="panel-library">
+  {% if library_records %}
+  <div class="cards">
+    {% for b in library_records %}
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><div class="card-title">📖 {{ b.book_title }}</div><div class="card-sub">by {{ b.author or 'Unknown' }}</div></div>
+        {% if b.returned_date %}<span class="pill p-green">Returned</span>{% else %}<span class="pill p-gold">Borrowed</span>{% endif %}
+      </div>
+      <div class="card-foot"><span>Issued: {{ b.issued_date }}</span><span>Due: {{ b.due_date }}</span></div>
+      {% if not b.returned_date %}<div style="margin-top:.5rem;font-size:.76rem;color:#dc2626;font-weight:600;">⚠ Return by {{ b.due_date }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<div class="empty"><span class="ei">📚</span><p>No library records yet. The librarian will update this when you borrow books.</p></div>{% endif %}
+</div>
+
+{# ── CANTEEN ── #}
+<div class="panel" id="panel-canteen">
+  {% if canteen_menu %}
+    {% set days = canteen_menu | groupby('day_of_week') %}
+    {% for day, items in days %}
+    <div class="day-title">{{ day }}</div>
+    <div class="cmenu" style="margin-bottom:1rem;">
+      {% for item in items %}
+      <div class="citem">
+        <div class="cem">{{ item.emoji or '🍽' }}</div>
+        <div class="cnm">{{ item.item_name }}</div>
+        <div class="cpr">₹{{ item.price }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  {% else %}<div class="empty"><span class="ei">🍽</span><p>No canteen menu posted yet. Admin will add it here.</p></div>{% endif %}
+</div>
+
+{# ── CALENDAR ── #}
+<div class="panel" id="panel-calendar">
+  <div class="cal-wrap">
+    <div class="cal-box">
+      <div class="cal-nav">
+        <button class="cal-nbtn" onclick="calPrev()">‹</button>
+        <h3 id="calTitle"></h3>
+        <button class="cal-nbtn" onclick="calNext()">›</button>
+      </div>
+      <div class="cal-header">
+        {% for d in ['Su','Mo','Tu','We','Th','Fr','Sa'] %}<div class="cal-dname">{{ d }}</div>{% endfor %}
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+    <div>
+      <h3 style="font-size:.97rem;font-weight:700;color:#2c3e50;margin-bottom:.9rem;">📅 Upcoming Events</h3>
+      {% if calendar_events %}
+        {% for ev in calendar_events %}
+        <div class="ev-item">
+          <div class="ev-date">{{ ev.event_date[8:10] }}<br>{{ ev.event_date[5:7] }}</div>
+          <div class="ev-info"><h4>{{ ev.title }}</h4><p>{{ ev.description or '' }}</p></div>
+        </div>
+        {% endfor %}
+      {% else %}<div class="empty"><span class="ei">📅</span><p>No events yet.</p></div>{% endif %}
+    </div>
+  </div>
+</div>
+
+{# ── EMAIL ── #}
+<div class="panel" id="panel-email">
+  <div class="email-form">
+    <h3>✉ Send Email</h3>
+    <form method="POST" action="{{ url_for('student_send_email') }}">
+      <input type="email" name="to_email" placeholder="Recipient email address" required>
+      <input type="text"  name="subject"  placeholder="Subject" required>
+      <textarea name="body" placeholder="Write your message here..."></textarea>
+      <button type="submit" class="btn-teal">Send Email →</button>
+    </form>
+  </div>
+  <p style="color:#94a3b8;font-size:.83rem;">Emails are sent through SchoolBridge's mail server. Use this to contact parents or anyone outside the portal.</p>
+</div>
+
+{# ── REPORTS ── #}
+<div class="panel" id="panel-reports">
+  {% if reports %}
+  <div class="cards">
+    {% for r in reports %}
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><div class="card-title">{{ r.title }}</div><div class="card-sub">{{ r.report_type | capitalize }} · By {{ r.sender }}</div></div>
+        <span class="pill p-blue">{{ r.report_type }}</span>
+      </div>
+      <div class="card-body">{{ r.description or '' }}</div>
+      <div class="card-foot"><span>{{ r.created_at }}</span>{% if r.attachment %}<a href="{{ url_for('static', filename=r.attachment) }}" class="dl-link">📎 Download</a>{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<div class="empty"><span class="ei">📁</span><p>No reports yet. Teachers will upload reports here.</p></div>{% endif %}
+</div>
+
+{# ── MY INFO ── #}
+<div class="panel" id="panel-info">
+  {% if student_info %}
+  <table class="info-table">
+    <tbody>
+      <tr><th>Name</th><td>{{ student_info.name }}</td></tr>
+      <tr><th>Username</th><td>{{ session.username }}</td></tr>
+      <tr><th>Grade</th><td>{{ student_info.grade }}</td></tr>
+      <tr><th>Section</th><td>{{ student_info.section }}</td></tr>
+      <tr><th>Date of Birth</th><td>{{ student_info.dob }}</td></tr>
+      <tr><th>School</th><td>{{ student_info.school_name or '—' }}</td></tr>
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
 {% endif %}
+</div>
+
+<script>
+function showTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Calendar
+const evDates = {{ (calendar_events | map(attribute='event_date') | list) | tojson if calendar_events else '[]' }};
+let calDate = new Date();
+function renderCal() {
+  const y = calDate.getFullYear(), m = calDate.getMonth();
+  document.getElementById('calTitle').textContent =
+    calDate.toLocaleString('default',{month:'long',year:'numeric'});
+  const first = new Date(y,m,1).getDay();
+  const days  = new Date(y,m+1,0).getDate();
+  const today = new Date();
+  const grid  = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  for (let i=0;i<first;i++){const d=document.createElement('div');d.className='cday empty';grid.appendChild(d);}
+  for (let i=1;i<=days;i++){
+    const d=document.createElement('div'); d.className='cday'; d.textContent=i;
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+    if(y===today.getFullYear()&&m===today.getMonth()&&i===today.getDate()) d.classList.add('today');
+    if(evDates.some(e=>e&&e.startsWith(ds))) d.classList.add('has-ev');
+    grid.appendChild(d);
+  }
+}
+function calPrev(){calDate.setMonth(calDate.getMonth()-1);renderCal();}
+function calNext(){calDate.setMonth(calDate.getMonth()+1);renderCal();}
+renderCal();
+</script>
 {% endblock %}

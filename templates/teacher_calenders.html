@@ -1,0 +1,61 @@
+{% extends 'layout.html' %}
+{% block title %}Calendar Events{% endblock %}
+{% block body %}
+<style>
+.cw { max-width:860px; margin:2rem auto; padding:0 1.2rem; }
+.chead { font-size:1.5rem; font-weight:800; color:#2c3e50; margin-bottom:1.5rem; }
+.cf { background:white; border-radius:16px; padding:2rem; border:1px solid rgba(44,62,80,.1); margin-bottom:2rem; }
+.cf h3 { font-size:1rem; font-weight:700; color:#2c3e50; margin-bottom:1.1rem; }
+.fg { margin-bottom:.9rem; }
+.fg label { display:block; font-size:.75rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.28rem; }
+.fg input,.fg textarea { width:100%; padding:.67rem .9rem; border-radius:9px; border:1.5px solid rgba(37,196,204,.2); font-size:.89rem; outline:none; font-family:inherit; }
+.fg input:focus,.fg textarea:focus { border-color:#25C4CC; }
+.frow { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
+.btn-s { padding:.7rem 1.6rem; background:linear-gradient(135deg,#25C4CC,#1aa3a8); color:white; border:none; border-radius:9px; font-weight:700; cursor:pointer; font-family:inherit; }
+.msg-ok { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; border-radius:8px; padding:.68rem 1rem; margin-bottom:1rem; font-size:.87rem; }
+.msg-err { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; border-radius:8px; padding:.68rem 1rem; margin-bottom:1rem; font-size:.87rem; }
+.ev-list { display:flex; flex-direction:column; gap:.8rem; }
+.ev-item { background:white; border-radius:13px; padding:1.1rem 1.3rem; border:1px solid rgba(44,62,80,.08); display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; }
+.ev-date-badge { background:linear-gradient(135deg,#25C4CC,#1aa3a8); color:white; border-radius:8px; padding:.4rem .7rem; text-align:center; font-size:.75rem; font-weight:700; min-width:44px; flex-shrink:0; }
+.ev-body h4 { font-size:.93rem; font-weight:700; color:#2c3e50; margin-bottom:.2rem; }
+.ev-body p { font-size:.82rem; color:#64748b; }
+.ev-meta { font-size:.73rem; color:#94a3b8; margin-top:.35rem; }
+</style>
+<div class="cw">
+  <div class="chead">📅 Calendar Events</div>
+  {% if success %}<div class="msg-ok">✓ {{ success }}</div>{% endif %}
+  {% if error %}<div class="msg-err">⚠ {{ error }}</div>{% endif %}
+  <div class="cf">
+    <h3>Add an Event</h3>
+    <form method="POST">
+      <div class="frow">
+        <div class="fg"><label>Event Title</label>
+          <input type="text" name="title" placeholder="e.g. Sports Day" required>
+        </div>
+        <div class="fg"><label>Date</label>
+          <input type="date" name="event_date" min="{{ today }}" required>
+        </div>
+      </div>
+      <div class="fg"><label>Description (optional)</label>
+        <textarea name="description" rows="2" placeholder="More details..."></textarea>
+      </div>
+      <button type="submit" class="btn-s">Add Event →</button>
+    </form>
+  </div>
+  <h3 style="font-size:1rem;font-weight:700;color:#2c3e50;margin-bottom:.9rem;">Upcoming Events</h3>
+  {% if events %}
+  <div class="ev-list">
+    {% for ev in events %}
+    <div class="ev-item">
+      <div class="ev-date-badge">{{ ev.event_date[8:10] }}<br>{{ ev.event_date[5:7] }}</div>
+      <div class="ev-body" style="flex:1;">
+        <h4>{{ ev.title }}</h4>
+        <p>{{ ev.description or '' }}</p>
+        <div class="ev-meta">By {{ ev.creator }} · {{ ev.event_date }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<p style="color:#94a3b8;font-size:.9rem;">No events added yet.</p>{% endif %}
+</div>
+{% endblock %}

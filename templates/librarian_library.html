@@ -1,0 +1,129 @@
+{% extends 'layout.html' %}
+{% block title %}Library Management{% endblock %}
+{% block body %}
+<style>
+.lw { max-width:1060px; margin:2rem auto; padding:0 1.2rem; }
+.lhead { font-size:1.5rem; font-weight:800; color:#2c3e50; margin-bottom:1.5rem; display:flex; align-items:center; gap:.7rem; }
+.lf { background:white; border-radius:16px; padding:2rem; border:1px solid rgba(44,62,80,.1); margin-bottom:2rem; }
+.lf h3 { font-size:1rem; font-weight:700; color:#2c3e50; margin-bottom:1.1rem; }
+.fg { margin-bottom:.9rem; }
+.fg label { display:block; font-size:.75rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.28rem; }
+.fg input,.fg select { width:100%; padding:.67rem .9rem; border-radius:9px; border:1.5px solid rgba(37,196,204,.2); font-size:.89rem; outline:none; font-family:inherit; transition:border-color .2s; }
+.fg input:focus,.fg select:focus { border-color:#25C4CC; }
+.frow { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.9rem; }
+.btn-s { padding:.7rem 1.6rem; background:linear-gradient(135deg,#25C4CC,#1aa3a8); color:white; border:none; border-radius:9px; font-weight:700; cursor:pointer; font-family:inherit; }
+.btn-ret { padding:.4rem .8rem; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; border-radius:7px; font-size:.78rem; font-weight:700; cursor:pointer; font-family:inherit; }
+.btn-ret:hover { background:#dcfce7; }
+.msg-ok { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; border-radius:8px; padding:.68rem 1rem; margin-bottom:1rem; font-size:.87rem; }
+.msg-err { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; border-radius:8px; padding:.68rem 1rem; margin-bottom:1rem; font-size:.87rem; }
+.ltable { width:100%; border-collapse:collapse; background:white; border-radius:14px; overflow:hidden; border:1px solid rgba(44,62,80,.08); }
+.ltable th { background:linear-gradient(135deg,#25C4CC,#1aa3a8); color:white; padding:.75rem 1rem; text-align:left; font-size:.78rem; font-weight:700; }
+.ltable td { padding:.75rem 1rem; font-size:.86rem; border-top:1px solid rgba(44,62,80,.06); color:#2c3e50; }
+.ltable tr:hover td { background:#f8fafc; }
+.pill-out { background:rgba(240,181,74,.15); color:#92400e; font-size:.7rem; font-weight:700; padding:.18rem .5rem; border-radius:5px; }
+.pill-in  { background:rgba(34,197,94,.12); color:#15803d; font-size:.7rem; font-weight:700; padding:.18rem .5rem; border-radius:5px; }
+.pill-due { background:rgba(239,68,68,.1); color:#dc2626; font-size:.7rem; font-weight:700; padding:.18rem .5rem; border-radius:5px; }
+.tabs { display:flex; gap:.3rem; border-bottom:2px solid rgba(44,62,80,.08); margin-bottom:1.3rem; }
+.tab { padding:.55rem .95rem; border-radius:8px 8px 0 0; font-size:.83rem; font-weight:600; cursor:pointer; border:none; background:transparent; color:#64748b; position:relative; bottom:-2px; border-bottom:2px solid transparent; font-family:inherit; }
+.tab.active { color:#25C4CC; border-bottom-color:#25C4CC; background:rgba(37,196,204,.06); }
+.panel { display:none; } .panel.active { display:block; }
+</style>
+<div class="lw">
+  <div class="lhead">📚 Library Management <span style="background:rgba(37,196,204,.12);color:#1aa3a8;font-size:.75rem;font-weight:700;padding:.3rem .8rem;border-radius:12px;">Librarian</span></div>
+  {% if success %}<div class="msg-ok">✓ {{ success }}</div>{% endif %}
+  {% if error %}<div class="msg-err">⚠ {{ error }}</div>{% endif %}
+
+  <div class="lf">
+    <h3>📖 Issue a Book</h3>
+    <form method="POST">
+      <input type="hidden" name="action" value="issue">
+      <div class="frow">
+        <div class="fg"><label>Student</label>
+          <select name="student_id" required>
+            <option value="">— Select —</option>
+            {% for s in students %}<option value="{{ s.id }}">{{ s.username }} (Gr.{{ s.grade }}{{ s.section }})</option>{% endfor %}
+          </select>
+        </div>
+        <div class="fg"><label>Book Title</label>
+          <input type="text" name="book_title" placeholder="Book title" required>
+        </div>
+        <div class="fg"><label>Author</label>
+          <input type="text" name="author" placeholder="Author name">
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Issue Date</label>
+          <input type="date" name="issued_date" value="{{ today }}">
+        </div>
+        <div class="fg"><label>Return Period (days)</label>
+          <input type="number" name="days" value="14" min="1" max="90">
+        </div>
+      </div>
+      <button type="submit" class="btn-s">Issue Book →</button>
+    </form>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('active',this)">📤 Currently Issued ({{ active|length }})</button>
+    <button class="tab" onclick="showTab('history',this)">📋 History</button>
+  </div>
+
+  <div class="panel active" id="panel-active">
+    {% if active %}
+    <table class="ltable">
+      <thead><tr><th>Student</th><th>Grade</th><th>Book</th><th>Author</th><th>Issued</th><th>Due</th><th>Status</th><th>Return</th></tr></thead>
+      <tbody>
+        {% for b in active %}
+        {% set overdue = b.due_date < today %}
+        <tr>
+          <td><strong>{{ b.student_name }}</strong></td>
+          <td>{{ b.grade }}</td>
+          <td>{{ b.book_title }}</td>
+          <td>{{ b.author or '—' }}</td>
+          <td>{{ b.issued_date }}</td>
+          <td>{{ b.due_date }}</td>
+          <td>{% if overdue %}<span class="pill-due">⚠ Overdue</span>{% else %}<span class="pill-out">Borrowed</span>{% endif %}</td>
+          <td>
+            <form method="POST" style="display:inline;">
+              <input type="hidden" name="action" value="return">
+              <input type="hidden" name="record_id" value="{{ b.id }}">
+              <button type="submit" class="btn-ret">✓ Return</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p style="color:#94a3b8;font-size:.9rem;">No books currently issued.</p>{% endif %}
+  </div>
+
+  <div class="panel" id="panel-history">
+    {% if history %}
+    <table class="ltable">
+      <thead><tr><th>Student</th><th>Grade</th><th>Book</th><th>Issued</th><th>Due</th><th>Returned</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for b in history %}
+        <tr>
+          <td>{{ b.student_name }}</td>
+          <td>{{ b.grade }}</td>
+          <td>{{ b.book_title }}</td>
+          <td>{{ b.issued_date }}</td>
+          <td>{{ b.due_date }}</td>
+          <td>{{ b.returned_date or '—' }}</td>
+          <td>{% if b.returned_date %}<span class="pill-in">Returned</span>{% else %}<span class="pill-out">Active</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p style="color:#94a3b8;font-size:.9rem;">No history yet.</p>{% endif %}
+  </div>
+</div>
+<script>
+function showTab(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+{% endblock %}

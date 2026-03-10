@@ -1,0 +1,92 @@
+{% extends 'layout.html' %}
+{% block title %}Upload Results{% endblock %}
+{% block body %}
+<style>
+.tr-wrap { max-width: 960px; margin: 2rem auto; padding: 0 1.2rem; }
+.tr-head { font-size: 1.5rem; font-weight: 800; color: #2c3e50; margin-bottom: 1.6rem; }
+.tr-form { background: white; border-radius: 16px; padding: 2rem; border: 1px solid rgba(44,62,80,.1); margin-bottom: 2rem; }
+.tr-form h3 { font-size: 1rem; font-weight: 700; color: #2c3e50; margin-bottom: 1.2rem; }
+.fg { margin-bottom: .95rem; }
+.fg label { display:block; font-size:.76rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.3rem; }
+.fg input, .fg select, .fg textarea { width:100%; padding:.68rem .9rem; border-radius:9px; border:1.5px solid rgba(37,196,204,.2); font-size:.9rem; outline:none; font-family:inherit; transition:border-color .2s; }
+.fg input:focus, .fg select:focus, .fg textarea:focus { border-color:#25C4CC; }
+.frow { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:.9rem; }
+.btn-s { padding:.7rem 1.6rem; background:linear-gradient(135deg,#25C4CC,#1aa3a8); color:white; border:none; border-radius:9px; font-weight:700; cursor:pointer; font-family:inherit; transition:all .2s; }
+.btn-s:hover { transform:translateY(-2px); box-shadow:0 5px 16px rgba(37,196,204,.35); }
+.msg-ok { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; border-radius:8px; padding:.7rem 1rem; margin-bottom:1rem; font-size:.88rem; }
+.msg-err { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; border-radius:8px; padding:.7rem 1rem; margin-bottom:1rem; font-size:.88rem; }
+.rtable { width:100%; border-collapse:collapse; background:white; border-radius:14px; overflow:hidden; border:1px solid rgba(44,62,80,.08); }
+.rtable th { background:linear-gradient(135deg,#25C4CC,#1aa3a8); color:white; padding:.75rem 1rem; text-align:left; font-size:.78rem; font-weight:700; }
+.rtable td { padding:.75rem 1rem; font-size:.87rem; border-top:1px solid rgba(44,62,80,.06); color:#2c3e50; }
+.rtable tr:hover td { background:#f8fafc; }
+.g-A { color:#15803d; font-weight:700; } .g-Ap { color:#0369a1; font-weight:700; }
+.g-B { color:#1aa3a8; font-weight:700; } .g-C { color:#d97706; font-weight:700; }
+.g-D, .g-F { color:#dc2626; font-weight:700; }
+</style>
+<div class="tr-wrap">
+  <div class="tr-head">📊 Upload Student Results</div>
+  {% if success %}<div class="msg-ok">✓ {{ success }}</div>{% endif %}
+  {% if error %}<div class="msg-err">⚠ {{ error }}</div>{% endif %}
+
+  <div class="tr-form">
+    <h3>Post a Result</h3>
+    <form method="POST">
+      <div class="frow">
+        <div class="fg">
+          <label>Student</label>
+          <select name="student_id" required>
+            <option value="">— Select —</option>
+            {% for s in students %}
+            <option value="{{ s.id }}">{{ s.username }} (Gr.{{ s.grade }}{{ s.section }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="fg">
+          <label>Exam Name</label>
+          <input type="text" name="exam_name" placeholder="e.g. Term 1 Exam" required>
+        </div>
+        <div class="fg">
+          <label>Subject</label>
+          <input type="text" name="subject" placeholder="e.g. Mathematics" required>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg">
+          <label>Marks Obtained</label>
+          <input type="number" step="0.5" name="marks" placeholder="e.g. 85" required>
+        </div>
+        <div class="fg">
+          <label>Out Of</label>
+          <input type="number" step="0.5" name="out_of" value="100">
+        </div>
+        <div class="fg">
+          <label>Remarks (optional)</label>
+          <input type="text" name="remarks" placeholder="e.g. Good performance">
+        </div>
+      </div>
+      <button type="submit" class="btn-s">Save Result →</button>
+    </form>
+  </div>
+
+  <h3 style="font-size:1rem;font-weight:700;color:#2c3e50;margin-bottom:.9rem;">Recently Posted Results</h3>
+  {% if posted %}
+  <table class="rtable">
+    <thead><tr><th>Student</th><th>Exam</th><th>Subject</th><th>Marks</th><th>Out Of</th><th>Grade</th><th>Remarks</th><th>Date</th></tr></thead>
+    <tbody>
+      {% for r in posted %}
+      <tr>
+        <td>{{ r.student_name }}</td>
+        <td>{{ r.exam_name }}</td>
+        <td>{{ r.subject }}</td>
+        <td>{{ r.marks }}</td>
+        <td>{{ r.out_of }}</td>
+        <td class="g-{{ r.grade | replace('+','p') }}">{{ r.grade }}</td>
+        <td>{{ r.remarks or '—' }}</td>
+        <td>{{ r.created_at[:10] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p style="color:#94a3b8;font-size:.9rem;">No results posted yet.</p>{% endif %}
+</div>
+{% endblock %}

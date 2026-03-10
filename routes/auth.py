@@ -42,12 +42,18 @@ def register():
             teacher_passwords = [
                 p.strip() for p in os.environ.get("TEACHER_PASSWORDS", "").split(",") if p.strip()
             ]
-            if not teacher_passwords:
+            librarian_passwords = [
+                p.strip() for p in os.environ.get("LIBRARIAN_PASSWORDS", "").split(",") if p.strip()
+            ]
+            all_teacher_passwords = teacher_passwords + librarian_passwords
+            if not all_teacher_passwords:
                 return render_template("register.html", error="Teacher passwords are not configured.")
-            if password not in teacher_passwords:
+            if password not in all_teacher_passwords:
                 return render_template("register.html", error="Invalid teacher password.")
             if not department or not phone:
                 return render_template("register.html", error="Department and phone are required for teachers.")
+            # Mark as librarian if they used a librarian password
+            is_librarian = 1 if password in librarian_passwords else 0
 
         code = None
         if role == "principal":
@@ -57,14 +63,21 @@ def register():
             while db.execute("SELECT 1 FROM schools WHERE code = ?", code):
                 code = generate_school_code()
 
+        # students can optionally provide email
+        student_email = email if role == "student" else None
+        if role != "teacher":
+            is_librarian = 0
+
         hashed = generate_password_hash(password)
         db.execute(
-            "INSERT INTO users (username, password, is_admin, role, department, phone) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO users (username, password, is_admin, role, department, phone, email, is_librarian) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             username, hashed,
             1 if role == "admin" else 0,
             role,
             department if role == "teacher" else None,
-            phone if role == "teacher" else None
+            phone if role == "teacher" else None,
+            email if role in ("principal", "student") else None,
+            is_librarian if role == "teacher" else 0
         )
         new_user = db.execute("SELECT id FROM users WHERE username = ?", username)[0]
 
@@ -78,13 +91,11 @@ def register():
             )
             ok, err = send_school_code_email(email, code, school_name)
             if ok:
-                return render_template(
-                    "register.html",
-                    success=f"Principal registered! Your school code is: {code} — it has also been emailed to you."
-                )
+                return render_template("register.html", success="Principal registered. School code sent to your email.")
             return render_template(
                 "register.html",
-                success=f"Principal registered! Your school code is: {code} — please save this now."
+                success=f"Principal registered. School code: {code}",
+                error="Email failed - save your code now!"
             )
 
         return redirect(url_for("login"))
@@ -218,6 +229,12 @@ def home():
 
     elif role == "teacher":
         uid    = session["user_id"]
+        # Check if librarian
+        u = db.execute("SELECT is_librarian FROM users WHERE id = ?", uid)
+        if u and u[0]["is_librarian"]:
+            session["is_librarian"] = True
+        else:
+            session["is_librarian"] = False
         counts = {k: 0 for k in [
             "inbox_unread", "inbox_received", "student_unread", "student_received",
             "sent_students", "sent_admin", "sent_circulars", "sent_homework",
@@ -267,6 +284,17 @@ def home():
             else:
                 error = "All fields required. Section must be A-G."
         student_info = entry[0] if entry else None
+        messages     = []
+        homework_list= []
+        circulars_list = []
+        attendance_summary = None
+        attendance_records = []
+        results = []
+        library_records = []
+        canteen_menu = []
+        calendar_events = []
+        reports = []
+
         if student_info:
             g = student_info["grade"]
             counts["inbox_unread"]     = db.execute("SELECT COUNT(*) AS c FROM messages WHERE recipient_id = ? AND is_read = 0", uid)[0]["c"]
@@ -279,11 +307,72 @@ def home():
             counts["news_unread"]      = db.execute("SELECT COUNT(*) AS c FROM news n WHERE n.id NOT IN (SELECT news_id FROM news_seen WHERE user_id = ?)", uid)[0]["c"]
             counts["news_total"]       = db.execute("SELECT COUNT(*) AS c FROM news")[0]["c"]
             counts["total"]            = counts["inbox_unread"] + counts["circulars_unread"] + counts["homework_unread"] + counts["news_unread"]
+
+            messages = db.execute("""
+                SELECT m.message AS content, m.created_at, u.username AS sender
+                FROM messages m JOIN users u ON m.sender_id = u.id
+                WHERE m.recipient_id = ? ORDER BY m.created_at DESC LIMIT 5
+            """, uid)
+            homework_list = db.execute("""
+                SELECT h.title, h.body, h.attachment, h.created_at, u.username AS sender, h.grade
+                FROM homework h JOIN users u ON h.sender_id = u.id
+                WHERE h.grade = ? ORDER BY h.created_at DESC LIMIT 6
+            """, g)
+            circulars_list = db.execute("""
+                SELECT c.title, c.body, c.attachment, c.created_at, u.username AS sender
+                FROM circulars c JOIN users u ON c.sender_id = u.id
+                WHERE c.grade = ? ORDER BY c.created_at DESC LIMIT 6
+            """, g)
+            results = db.execute("""
+                SELECT r.exam_name, r.subject, r.marks, r.out_of, r.grade, r.remarks
+                FROM results r WHERE r.student_id = ? ORDER BY r.exam_name, r.subject
+            """, uid)
+            att_records = db.execute("""
+                SELECT a.date, a.status, u.username AS marked_by
+                FROM attendance a JOIN users u ON a.marked_by = u.id
+                WHERE a.student_id = ? ORDER BY a.date DESC
+            """, uid)
+            attendance_records = att_records
+            total_att = len(att_records)
+            present   = sum(1 for r in att_records if r["status"] == "present")
+            absent    = sum(1 for r in att_records if r["status"] == "absent")
+            late      = sum(1 for r in att_records if r["status"] == "late")
+            pct       = round(present / total_att * 100, 1) if total_att else 0
+            attendance_summary = {"present": present, "absent": absent, "late": late, "percent": pct}
+            library_records = db.execute("""
+                SELECT l.book_title, l.author, l.issued_date, l.due_date, l.returned_date
+                FROM library_records l WHERE l.student_id = ? ORDER BY l.issued_date DESC
+            """, uid)
+            canteen_menu = db.execute(
+                "SELECT * FROM canteen_menu ORDER BY CASE day_of_week "
+                "WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 "
+                "WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 ELSE 7 END, item_name"
+            )
+            from datetime import date as dt
+            calendar_events = db.execute(
+                "SELECT title, description, event_date FROM calendar_events "
+                "WHERE event_date >= ? ORDER BY event_date LIMIT 10", str(dt.today())
+            )
+            reports = db.execute("""
+                SELECT r.report_type, r.title, r.description, r.attachment, r.created_at,
+                       u.username AS sender
+                FROM student_reports r JOIN users u ON r.sender_id = u.id
+                WHERE r.student_id = ? ORDER BY r.created_at DESC
+            """, uid)
+            school_row = db.execute("SELECT s.name AS school_name FROM schools s JOIN users u ON u.school_id = s.id WHERE u.id = ?", uid)
+            if school_row:
+                student_info = dict(student_info)
+                student_info["school_name"] = school_row[0]["school_name"]
+
         return render_template(
             "student_dashboard.html",
             info_submitted=info_submitted, message=message, error=error,
             name_prefill=session.get("username", ""),
-            student_info=student_info, counts=counts
+            student_info=student_info, counts=counts,
+            messages=messages, homework_list=homework_list, circulars_list=circulars_list,
+            results=results, attendance_summary=attendance_summary,
+            attendance_records=attendance_records, library_records=library_records,
+            canteen_menu=canteen_menu, calendar_events=calendar_events, reports=reports
         )
 
 

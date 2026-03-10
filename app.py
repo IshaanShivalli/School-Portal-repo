@@ -141,6 +141,85 @@ def init_db():
     if "name" not in school_cols:
         db.execute("ALTER TABLE schools ADD COLUMN name TEXT DEFAULT 'Unknown School'")
 
+    # ── NEW TABLES ──────────────────────────────────────────────────────────
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS results (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            sender_id INTEGER NOT NULL,
+            exam_name TEXT NOT NULL,
+            subject TEXT NOT NULL,
+            marks REAL NOT NULL,
+            out_of REAL NOT NULL DEFAULT 100,
+            grade TEXT,
+            remarks TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS attendance (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            marked_by INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'present',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(student_id, date)
+        )
+    """)
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS library_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            librarian_id INTEGER NOT NULL,
+            book_title TEXT NOT NULL,
+            author TEXT,
+            issued_date TEXT NOT NULL,
+            due_date TEXT NOT NULL,
+            returned_date TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS canteen_menu (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_name TEXT NOT NULL,
+            price REAL NOT NULL,
+            emoji TEXT,
+            day_of_week TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS calendar_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            created_by INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            event_date TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS student_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            sender_id INTEGER NOT NULL,
+            report_type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            attachment TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # librarian flag on users
+    u_cols = {c["name"] for c in db.execute("SELECT name FROM pragma_table_info('users')")}
+    if "is_librarian" not in u_cols:
+        db.execute("ALTER TABLE users ADD COLUMN is_librarian INTEGER DEFAULT 0")
+    if "email" not in u_cols:
+        db.execute("ALTER TABLE users ADD COLUMN email TEXT")
+
 
 init_db()
 
@@ -215,6 +294,29 @@ def send_school_code_email(to_email, code, school_name="your school"):
         return False, str(exc)
 
 
+def send_generic_email(to_email, subject, body, from_name="SchoolBridge"):
+    host     = os.environ.get("SMTP_HOST")
+    port     = int(os.environ.get("SMTP_PORT", "0") or 0)
+    user     = os.environ.get("SMTP_USER")
+    password = os.environ.get("SMTP_PASS")
+    sender   = os.environ.get("SMTP_FROM") or user
+    if not host or not port or not sender:
+        return False, "Email service not configured."
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"]    = f"{from_name} <{sender}>"
+    msg["To"]      = to_email
+    msg.set_content(body)
+    try:
+        with smtplib.SMTP(host, port, timeout=10) as server:
+            server.starttls()
+            if user and password:
+                server.login(user, password)
+            server.send_message(msg)
+        return True, ""
+    except Exception as exc:
+        return False, str(exc)
+
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -266,10 +368,20 @@ def add_header(response):
 # ── Routes (imported from separate files, registered on app directly) ─────────
 
 from routes.auth      import register, login, logout, home, settings, profile_view
-from routes.student   import send_request, student_inbox, clear_inbox, student_circulars, student_homework
-from routes.teacher   import teacher_messages, teacher_student_inbox, teacher_clear_inbox, teacher_circulars, teacher_homework, teacher_to_admin
-from routes.admin     import admin_dashboard, admin_broadcast, admin_messages, admin_clear_inbox, handle_message, admin_grades, delete_user
+from routes.student   import (send_request, student_inbox, clear_inbox,
+                               student_circulars, student_homework,
+                               student_results, student_attendance,
+                               student_library, student_canteen,
+                               student_calendar, student_send_email,
+                               student_reports)
+from routes.teacher   import (teacher_messages, teacher_student_inbox,
+                               teacher_clear_inbox, teacher_circulars,
+                               teacher_homework, teacher_to_admin,
+                               teacher_results, teacher_attendance,
+                               teacher_reports, teacher_calendar)
+from routes.admin     import admin_dashboard, admin_broadcast, admin_messages, admin_clear_inbox, handle_message, admin_grades, delete_user, admin_canteen, admin_calendar
 from routes.principal import principal_messages
+from routes.librarian import librarian_library
 
 app.add_url_rule("/register",             "register",             register,             methods=["GET", "POST"])
 app.add_url_rule("/login",                "login",                login,                methods=["GET", "POST"])
@@ -283,6 +395,13 @@ app.add_url_rule("/student_inbox",        "student_inbox",        student_inbox)
 app.add_url_rule("/clear_inbox",          "clear_inbox",          clear_inbox,          methods=["POST"])
 app.add_url_rule("/student_circulars",    "student_circulars",    student_circulars)
 app.add_url_rule("/student_homework",     "student_homework",     student_homework)
+app.add_url_rule("/student_results",      "student_results",      student_results)
+app.add_url_rule("/student_attendance",   "student_attendance",   student_attendance)
+app.add_url_rule("/student_library",      "student_library",      student_library)
+app.add_url_rule("/student_canteen",      "student_canteen",      student_canteen)
+app.add_url_rule("/student_calendar",     "student_calendar",     student_calendar)
+app.add_url_rule("/student_send_email",   "student_send_email",   student_send_email,   methods=["POST"])
+app.add_url_rule("/student_reports",      "student_reports",      student_reports)
 
 app.add_url_rule("/teacher_messages",     "teacher_messages",     teacher_messages,     methods=["GET", "POST"])
 app.add_url_rule("/teacher_student_inbox","teacher_student_inbox",teacher_student_inbox)
@@ -290,6 +409,10 @@ app.add_url_rule("/teacher_clear_inbox",  "teacher_clear_inbox",  teacher_clear_
 app.add_url_rule("/teacher_circulars",    "teacher_circulars",    teacher_circulars,    methods=["GET", "POST"])
 app.add_url_rule("/teacher_homework",     "teacher_homework",     teacher_homework,     methods=["GET", "POST"])
 app.add_url_rule("/teacher_to_admin",     "teacher_to_admin",     teacher_to_admin,     methods=["GET", "POST"])
+app.add_url_rule("/teacher_results",      "teacher_results",      teacher_results,      methods=["GET", "POST"])
+app.add_url_rule("/teacher_attendance",   "teacher_attendance",   teacher_attendance,   methods=["GET", "POST"])
+app.add_url_rule("/teacher_reports",      "teacher_reports",      teacher_reports,      methods=["GET", "POST"])
+app.add_url_rule("/teacher_calendar",     "teacher_calendar",     teacher_calendar,     methods=["GET", "POST"])
 
 app.add_url_rule("/admin_dashboard",      "admin_dashboard",      admin_dashboard)
 app.add_url_rule("/admin_broadcast",      "admin_broadcast",      admin_broadcast,      methods=["GET", "POST"])
@@ -298,8 +421,12 @@ app.add_url_rule("/admin_clear_inbox",    "admin_clear_inbox",    admin_clear_in
 app.add_url_rule("/handle_message",       "handle_message",       handle_message,       methods=["POST"])
 app.add_url_rule("/admin_grades",         "admin_grades",         admin_grades,         methods=["GET", "POST"])
 app.add_url_rule("/delete_user",          "delete_user",          delete_user,          methods=["POST"])
+app.add_url_rule("/admin_canteen",        "admin_canteen",        admin_canteen,        methods=["GET", "POST"])
+app.add_url_rule("/admin_calendar",       "admin_calendar",       admin_calendar,       methods=["GET", "POST"])
 
 app.add_url_rule("/principal_messages",   "principal_messages",   principal_messages,   methods=["GET", "POST"])
+
+app.add_url_rule("/librarian_library",    "librarian_library",    librarian_library,    methods=["GET", "POST"])
 
 
 @app.route("/")
