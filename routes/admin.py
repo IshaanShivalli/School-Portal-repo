@@ -28,8 +28,11 @@ def admin_dashboard():
     """)
     principals = db.execute("""
         SELECT u.id, u.username, u.profile_pic, u.is_logged_in, u.last_seen,
-               s.name AS school_name, s.code AS school_code
-        FROM users u LEFT JOIN schools s ON s.principal_id = u.id
+               COALESCE(s1.name, s2.name, 'Unknown School') AS school_name,
+               COALESCE(s1.code, s2.code) AS school_code
+        FROM users u
+        LEFT JOIN schools s1 ON s1.principal_id = u.id
+        LEFT JOIN schools s2 ON s2.id = u.school_id
         WHERE u.role = 'principal' ORDER BY u.username
     """)
 
@@ -243,10 +246,12 @@ def delete_user():
                 db.execute(f"DELETE FROM attendance WHERE student_id IN ({placeholders}) OR marked_by IN ({placeholders})", *user_ids, *user_ids)
                 db.execute(f"DELETE FROM library_records WHERE student_id IN ({placeholders}) OR librarian_id IN ({placeholders})", *user_ids, *user_ids)
                 db.execute(f"DELETE FROM results WHERE student_id IN ({placeholders}) OR sender_id IN ({placeholders})", *user_ids, *user_ids)
-                db.execute(f"DELETE FROM reports WHERE student_id IN ({placeholders}) OR sender_id IN ({placeholders})", *user_ids, *user_ids)
+                db.execute(f"DELETE FROM student_reports WHERE student_id IN ({placeholders}) OR sender_id IN ({placeholders})", *user_ids, *user_ids)
                 db.execute(f"DELETE FROM circulars WHERE sender_id IN ({placeholders})", *user_ids)
                 db.execute(f"DELETE FROM homework WHERE sender_id IN ({placeholders})", *user_ids)
                 db.execute(f"DELETE FROM news WHERE sender_id IN ({placeholders})", *user_ids)
+                db.execute(f"DELETE FROM calendar_events WHERE created_by IN ({placeholders})", *user_ids)
+                db.execute(f"DELETE FROM feedback WHERE user_id IN ({placeholders})", *user_ids)
                 db.execute(f"DELETE FROM users WHERE id IN ({placeholders})", *user_ids)
             db.execute("DELETE FROM schools WHERE id = ?", school_id)
         else:
@@ -257,6 +262,9 @@ def delete_user():
         db.execute("DELETE FROM circulars_seen WHERE user_id = ?", uid)
         db.execute("DELETE FROM homework_seen WHERE user_id = ?", uid)
         db.execute("DELETE FROM news_seen WHERE user_id = ?", uid)
+        db.execute("DELETE FROM student_reports WHERE student_id = ? OR sender_id = ?", uid, uid)
+        db.execute("DELETE FROM calendar_events WHERE created_by = ?", uid)
+        db.execute("DELETE FROM feedback WHERE user_id = ?", uid)
         db.execute("DELETE FROM users WHERE id = ?", uid)
     return redirect(url_for("admin_dashboard"))
 
