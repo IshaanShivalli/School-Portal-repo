@@ -23,17 +23,17 @@ def teacher_messages():
         message    = request.form.get("message", "").strip()
         if student_id and message:
             db.execute(
-                "INSERT INTO messages (sender_id, recipient_id, message) VALUES (?, ?, ?)",
+                "INSERT INTO messages (sender_id, recipient_id, message) VALUES (%s, %s, %s)",
                 session["user_id"], student_id, message
             )
             return redirect(url_for("teacher_messages"))
     messages = db.execute("""
         SELECT m.id, m.message, m.created_at, u.username AS sender
         FROM messages m JOIN users u ON m.sender_id = u.id
-        WHERE m.recipient_id = ? AND u.role IN ('admin','teacher') ORDER BY m.created_at DESC
+        WHERE m.recipient_id = %s AND u.role IN ('admin','teacher') ORDER BY m.created_at DESC
     """, session["user_id"])
     db.execute("""
-        UPDATE messages SET is_read = 1 WHERE recipient_id = ?
+        UPDATE messages SET is_read = 1 WHERE recipient_id = %s
         AND sender_id IN (SELECT id FROM users WHERE role IN ('admin','teacher'))
     """, session["user_id"])
     return render_template("teacher_messages.html", students=students, messages=messages)
@@ -47,10 +47,10 @@ def teacher_student_inbox():
     messages = db.execute("""
         SELECT m.id, m.message, m.created_at, u.username AS sender
         FROM messages m JOIN users u ON m.sender_id = u.id
-        WHERE m.recipient_id = ? AND u.role = 'student' ORDER BY m.created_at DESC
+        WHERE m.recipient_id = %s AND u.role = 'student' ORDER BY m.created_at DESC
     """, session["user_id"])
     db.execute("""
-        UPDATE messages SET is_read = 1 WHERE recipient_id = ?
+        UPDATE messages SET is_read = 1 WHERE recipient_id = %s
         AND sender_id IN (SELECT id FROM users WHERE role = 'student')
     """, session["user_id"])
     return render_template("teacher_student_inbox.html", messages=messages)
@@ -61,7 +61,7 @@ def teacher_clear_inbox():
     guard = _require_teacher()
     if guard:
         return guard
-    db.execute("DELETE FROM messages WHERE recipient_id = ?", session["user_id"])
+    db.execute("DELETE FROM messages WHERE recipient_id = %s", session["user_id"])
     return redirect(url_for("teacher_messages"))
 
 
@@ -85,13 +85,13 @@ def teacher_circulars():
         else:
             for g in selected_grades:
                 db.execute(
-                    "INSERT INTO circulars (sender_id, grade, title, body, attachment) VALUES (?, ?, ?, ?, ?)",
+                    "INSERT INTO circulars (sender_id, grade, title, body, attachment) VALUES (%s, %s, %s, %s, %s)",
                     session["user_id"], g, title, body, attachment
                 )
             success = "Circular sent!"
     circulars = db.execute("""
         SELECT id, grade, title, body, attachment, created_at
-        FROM circulars WHERE sender_id = ? ORDER BY created_at DESC
+        FROM circulars WHERE sender_id = %s ORDER BY created_at DESC
     """, session["user_id"])
     return render_template("teacher_circulars.html", grades=grades, circulars=circulars,
                            success=success, error=error)
@@ -117,13 +117,13 @@ def teacher_homework():
         else:
             for g in selected_grades:
                 db.execute(
-                    "INSERT INTO homework (sender_id, grade, title, body, attachment) VALUES (?, ?, ?, ?, ?)",
+                    "INSERT INTO homework (sender_id, grade, title, body, attachment) VALUES (%s, %s, %s, %s, %s)",
                     session["user_id"], g, title, body, attachment
                 )
             success = "Homework sent!"
     homework = db.execute("""
         SELECT id, grade, title, body, attachment, created_at
-        FROM homework WHERE sender_id = ? ORDER BY created_at DESC
+        FROM homework WHERE sender_id = %s ORDER BY created_at DESC
     """, session["user_id"])
     return render_template("teacher_homework.html", grades=grades, homework=homework,
                            success=success, error=error)
@@ -136,10 +136,7 @@ def teacher_to_admin():
     abort(403)
 
 
-# ── NEW ROUTES ─────────────────────────────────────────────────────────────
-
 def teacher_results():
-    """Teacher posts exam results for individual students."""
     from app import db
     guard = _require_teacher()
     if guard:
@@ -165,8 +162,8 @@ def teacher_results():
             error = "Student, exam name, subject and marks are required."
         else:
             try:
-                m = float(marks)
-                o = float(out_of) if out_of else 100.0
+                m   = float(marks)
+                o   = float(out_of) if out_of else 100.0
                 pct = (m / o) * 100
                 if pct >= 90:   grade = "A+"
                 elif pct >= 80: grade = "A"
@@ -176,18 +173,17 @@ def teacher_results():
                 else:           grade = "F"
                 db.execute(
                     "INSERT INTO results (student_id, sender_id, exam_name, subject, marks, out_of, grade, remarks) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                     int(student_id), session["user_id"], exam_name, subject, m, o, grade, remarks
                 )
                 success = f"Result saved! {subject}: {m}/{o} ({grade})"
             except ValueError:
                 error = "Marks must be numbers."
 
-    # Fetch all results this teacher has posted
     posted = db.execute("""
         SELECT r.*, u.username AS student_name
         FROM results r JOIN users u ON r.student_id = u.id
-        WHERE r.sender_id = ? ORDER BY r.created_at DESC
+        WHERE r.sender_id = %s ORDER BY r.created_at DESC
     """, session["user_id"])
 
     return render_template("teacher_results.html",
@@ -196,16 +192,14 @@ def teacher_results():
 
 
 def teacher_attendance():
-    """Teacher marks daily attendance for students."""
     from app import db
     from datetime import date as dt
     guard = _require_teacher()
     if guard:
         return guard
 
-    # Default to teacher's grade's students; show all if no grade filter
     grade_filter = request.args.get("grade", "")
-    today = str(dt.today())
+    today   = str(dt.today())
     success = ""
     error   = ""
 
@@ -214,18 +208,21 @@ def teacher_attendance():
         for key, val in request.form.items():
             if key.startswith("status_"):
                 sid = key.replace("status_", "")
-                db.execute(
-                    "INSERT INTO attendance (student_id, marked_by, date, status) VALUES (?, ?, ?, ?) "
-                    "ON CONFLICT (student_id, date) DO UPDATE SET "
-                    "marked_by = EXCLUDED.marked_by, status = EXCLUDED.status",
-                    int(sid), session["user_id"], att_date, val
-                )
+                try:
+                    # Works on both PG and SQLite 3.24+
+                    db.execute(
+                        "INSERT INTO attendance (student_id, marked_by, date, status) VALUES (%s, %s, %s, %s) "
+                        "ON CONFLICT (student_id, date) DO UPDATE SET status = EXCLUDED.status, marked_by = EXCLUDED.marked_by",
+                        int(sid), session["user_id"], att_date, val
+                    )
+                except Exception:
+                    pass
             if key.startswith("roll_"):
-                sid = key.replace("roll_", "")
+                sid  = key.replace("roll_", "")
                 roll = val.strip()
                 if roll:
                     db.execute(
-                        "UPDATE grades SET roll_number = ? WHERE user_id = ?",
+                        "UPDATE grades SET roll_number = %s WHERE user_id = %s",
                         roll, int(sid)
                     )
         success = f"Attendance saved for {att_date}!"
@@ -236,19 +233,20 @@ def teacher_attendance():
         FROM users u JOIN grades g ON u.id = g.user_id
         WHERE u.role = 'student'
     """
-    students = db.execute(q + " AND g.grade = ? ORDER BY u.username", grade_filter) if grade_filter \
+    students = (
+        db.execute(q + " AND g.grade = %s ORDER BY u.username", grade_filter)
+        if grade_filter
         else db.execute(q + " ORDER BY g.grade, u.username")
+    )
 
-    # Fetch today's attendance for these students
     existing = {}
-    if students:
-        att_date = request.form.get("att_date", today)
-        for s in students:
-            row = db.execute(
-                "SELECT status FROM attendance WHERE student_id = ? AND date = ?",
-                s["id"], att_date
-            )
-            existing[s["id"]] = row[0]["status"] if row else "present"
+    att_date = request.form.get("att_date", today)
+    for s in students:
+        row = db.execute(
+            "SELECT status FROM attendance WHERE student_id = %s AND date = %s",
+            s["id"], att_date
+        )
+        existing[s["id"]] = row[0]["status"] if row else "present"
 
     return render_template("teacher_attendance.html",
                            students=students, grades=grades,
@@ -258,7 +256,6 @@ def teacher_attendance():
 
 
 def teacher_reports():
-    """Teacher posts reports for individual students."""
     from app import db, save_upload
     guard = _require_teacher()
     if guard:
@@ -284,7 +281,7 @@ def teacher_reports():
         else:
             db.execute(
                 "INSERT INTO student_reports (student_id, sender_id, report_type, title, description, attachment) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
+                "VALUES (%s, %s, %s, %s, %s, %s)",
                 int(student_id), session["user_id"], report_type, title, description, attachment
             )
             success = "Report saved!"
@@ -292,7 +289,7 @@ def teacher_reports():
     posted = db.execute("""
         SELECT r.*, u.username AS student_name
         FROM student_reports r JOIN users u ON r.student_id = u.id
-        WHERE r.sender_id = ? ORDER BY r.created_at DESC
+        WHERE r.sender_id = %s ORDER BY r.created_at DESC
     """, session["user_id"])
 
     return render_template("teacher_reports.html",
@@ -301,7 +298,6 @@ def teacher_reports():
 
 
 def teacher_calendar():
-    """Teacher adds calendar events."""
     from app import db
     from datetime import date as dt
     guard = _require_teacher()
@@ -318,7 +314,7 @@ def teacher_calendar():
             error = "Title and date are required."
         else:
             db.execute(
-                "INSERT INTO calendar_events (created_by, title, description, event_date) VALUES (?, ?, ?, ?)",
+                "INSERT INTO calendar_events (created_by, title, description, event_date) VALUES (%s, %s, %s, %s)",
                 session["user_id"], title, description, event_date
             )
             success = "Event added!"
@@ -326,7 +322,7 @@ def teacher_calendar():
     events = db.execute(
         "SELECT ce.*, u.username AS creator FROM calendar_events ce "
         "JOIN users u ON ce.created_by = u.id "
-        "WHERE ce.event_date >= ? ORDER BY ce.event_date",
+        "WHERE ce.event_date >= %s ORDER BY ce.event_date",
         str(dt.today())
     )
     return render_template("teacher_calendar.html",

@@ -13,16 +13,14 @@ def _require_student():
 
 def _require_grade():
     from app import db
-    return db.execute("SELECT 1 FROM grades WHERE user_id = ? LIMIT 1", session["user_id"])
+    return db.execute("SELECT 1 FROM grades WHERE user_id = %s LIMIT 1", session["user_id"])
 
 
 def _get_grade():
     from app import db
-    rows = db.execute("SELECT grade FROM grades WHERE user_id = ? LIMIT 1", session["user_id"])
+    rows = db.execute("SELECT grade FROM grades WHERE user_id = %s LIMIT 1", session["user_id"])
     return rows[0]["grade"] if rows else None
 
-
-# ── existing routes ────────────────────────────────────────────────────────
 
 def send_request():
     from app import db
@@ -40,7 +38,7 @@ def send_request():
             return render_template("send_request.html", error="No teacher available.")
         for t in teachers:
             db.execute(
-                "INSERT INTO messages (sender_id, recipient_id, message) VALUES (?, ?, ?)",
+                "INSERT INTO messages (sender_id, recipient_id, message) VALUES (%s, %s, %s)",
                 session["user_id"], t["id"], message
             )
         return render_template("send_request.html", success="Message sent!")
@@ -57,9 +55,9 @@ def student_inbox():
     messages = db.execute("""
         SELECT m.message, m.created_at, u.username AS sender
         FROM messages m JOIN users u ON m.sender_id = u.id
-        WHERE m.recipient_id = ? ORDER BY m.created_at DESC
+        WHERE m.recipient_id = %s ORDER BY m.created_at DESC
     """, session["user_id"])
-    db.execute("UPDATE messages SET is_read = 1 WHERE recipient_id = ?", session["user_id"])
+    db.execute("UPDATE messages SET is_read = 1 WHERE recipient_id = %s", session["user_id"])
     return render_template("student_inbox.html", messages=messages)
 
 
@@ -70,7 +68,7 @@ def clear_inbox():
         return guard
     if not _require_grade():
         return redirect(url_for("home", need_info=1))
-    db.execute("DELETE FROM messages WHERE recipient_id = ?", session["user_id"])
+    db.execute("DELETE FROM messages WHERE recipient_id = %s", session["user_id"])
     return redirect(url_for("student_inbox"))
 
 
@@ -85,11 +83,11 @@ def student_circulars():
     circulars = db.execute("""
         SELECT c.id, c.title, c.body, c.attachment, c.created_at, u.username AS sender
         FROM circulars c JOIN users u ON c.sender_id = u.id
-        WHERE c.grade = ? ORDER BY c.created_at DESC
+        WHERE c.grade = %s ORDER BY c.created_at DESC
     """, grade)
     for c in circulars:
         db.execute(
-            "INSERT INTO circulars_seen (user_id, circular_id) VALUES (?, ?) "
+            "INSERT INTO circulars_seen (user_id, circular_id) VALUES (%s, %s) "
             "ON CONFLICT (user_id, circular_id) DO NOTHING",
             session["user_id"], c["id"]
         )
@@ -107,18 +105,16 @@ def student_homework():
     homework = db.execute("""
         SELECT h.id, h.title, h.body, h.attachment, h.created_at, u.username AS sender
         FROM homework h JOIN users u ON h.sender_id = u.id
-        WHERE h.grade = ? ORDER BY h.created_at DESC
+        WHERE h.grade = %s ORDER BY h.created_at DESC
     """, grade)
     for h in homework:
         db.execute(
-            "INSERT INTO homework_seen (user_id, homework_id) VALUES (?, ?) "
+            "INSERT INTO homework_seen (user_id, homework_id) VALUES (%s, %s) "
             "ON CONFLICT (user_id, homework_id) DO NOTHING",
             session["user_id"], h["id"]
         )
     return render_template("student_homework.html", homework=homework, grade=grade)
 
-
-# ── NEW ROUTES ─────────────────────────────────────────────────────────────
 
 def student_results():
     from app import db
@@ -131,7 +127,7 @@ def student_results():
         SELECT r.exam_name, r.subject, r.marks, r.out_of, r.grade, r.remarks, r.created_at,
                u.username AS sender
         FROM results r JOIN users u ON r.sender_id = u.id
-        WHERE r.student_id = ? ORDER BY r.exam_name, r.subject
+        WHERE r.student_id = %s ORDER BY r.exam_name, r.subject
     """, session["user_id"])
     return render_template("student_results.html", results=results)
 
@@ -146,7 +142,7 @@ def student_attendance():
     records = db.execute("""
         SELECT a.date, a.status, u.username AS marked_by
         FROM attendance a JOIN users u ON a.marked_by = u.id
-        WHERE a.student_id = ? ORDER BY a.date DESC
+        WHERE a.student_id = %s ORDER BY a.date DESC
     """, session["user_id"])
     total   = len(records)
     present = sum(1 for r in records if r["status"] == "present")
@@ -169,7 +165,7 @@ def student_library():
         SELECT l.book_title, l.author, l.issued_date, l.due_date, l.returned_date,
                u.username AS librarian
         FROM library_records l JOIN users u ON l.librarian_id = u.id
-        WHERE l.student_id = ? ORDER BY l.issued_date DESC
+        WHERE l.student_id = %s ORDER BY l.issued_date DESC
     """, session["user_id"])
     return render_template("student_library.html", library_records=records)
 
@@ -195,14 +191,14 @@ def student_calendar():
         return guard
     events = db.execute(
         "SELECT title, description, event_date FROM calendar_events "
-        "WHERE event_date >= ? ORDER BY event_date",
+        "WHERE event_date >= %s ORDER BY event_date",
         str(date.today())
     )
     return render_template("student_calendar.html", calendar_events=events)
 
 
 def student_send_email():
-    from app import db, send_generic_email
+    from app import send_generic_email
     guard = _require_student()
     if guard:
         return guard
@@ -210,12 +206,11 @@ def student_send_email():
         to_email = request.form.get("to_email", "").strip()
         subject  = request.form.get("subject", "").strip()
         body     = request.form.get("body", "").strip()
-        if not to_email or not subject or not body:
-            return redirect(url_for("home"))
-        ok, err = send_generic_email(
-            to_email, subject,
-            f"Message from {session['username']} (Student) via SchoolBridge:\n\n{body}"
-        )
+        if to_email and subject and body:
+            send_generic_email(
+                to_email, subject,
+                f"Message from {session['username']} (Student) via SchoolBridge:\n\n{body}"
+            )
     return redirect(url_for("home"))
 
 
@@ -230,6 +225,6 @@ def student_reports():
         SELECT r.report_type, r.title, r.description, r.attachment, r.created_at,
                u.username AS sender
         FROM student_reports r JOIN users u ON r.sender_id = u.id
-        WHERE r.student_id = ? ORDER BY r.created_at DESC
+        WHERE r.student_id = %s ORDER BY r.created_at DESC
     """, session["user_id"])
     return render_template("student_reports.html", reports=reports)

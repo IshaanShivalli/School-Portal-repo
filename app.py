@@ -38,6 +38,36 @@ def init_db():
     pk = "SERIAL PRIMARY KEY"
 
     db.execute(f"""
+        CREATE TABLE IF NOT EXISTS users (
+            id {pk},
+            username TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            is_admin INTEGER DEFAULT 0,
+            role TEXT DEFAULT 'student',
+            department TEXT,
+            phone TEXT,
+            email TEXT,
+            is_librarian INTEGER DEFAULT 0,
+            school_id INTEGER,
+            profile_pic TEXT,
+            is_logged_in INTEGER DEFAULT 0,
+            last_seen INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    db.execute(f"""
+        CREATE TABLE IF NOT EXISTS grades (
+            id {pk},
+            user_id INTEGER NOT NULL,
+            name TEXT,
+            grade TEXT,
+            section TEXT,
+            dob TEXT,
+            roll_number TEXT
+        )
+    """)
+
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS schools (
             id {pk},
             principal_id INTEGER,

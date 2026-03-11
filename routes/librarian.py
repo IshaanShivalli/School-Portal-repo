@@ -8,7 +8,7 @@ def _require_librarian():
     if session.get("role") != "teacher":
         abort(403)
     from app import db
-    u = db.execute("SELECT is_librarian FROM users WHERE id = ?", session["user_id"])
+    u = db.execute("SELECT is_librarian FROM users WHERE id = %s", session["user_id"])
     if not u or not u[0]["is_librarian"]:
         abort(403)
     return None
@@ -46,17 +46,34 @@ def librarian_library():
                     SELECT u.id, u.username
                     FROM users u
                     JOIN grades g ON u.id = g.user_id
-                    WHERE g.roll_number = ?
+                    WHERE g.roll_number = %s
                     LIMIT 1
                 """, roll_number)
                 if not student:
-                    error = "No student found with that roll number."
+                    # need to fetch active/history here too for the template
+                    active  = db.execute("""
+                        SELECT l.id, l.book_title, l.author, l.issued_date, l.due_date, l.returned_date,
+                               u.username AS student_name, g.grade
+                        FROM library_records l
+                        JOIN users u ON l.student_id = u.id
+                        JOIN grades g ON l.student_id = g.user_id
+                        WHERE l.returned_date IS NULL ORDER BY l.due_date
+                    """)
+                    history = db.execute("""
+                        SELECT l.id, l.book_title, l.author, l.issued_date, l.due_date, l.returned_date,
+                               u.username AS student_name, g.grade
+                        FROM library_records l
+                        JOIN users u ON l.student_id = u.id
+                        JOIN grades g ON l.student_id = g.user_id
+                        ORDER BY l.issued_date DESC LIMIT 50
+                    """)
                     return render_template("librarian_library.html",
                                            students=students, active=active, history=history,
-                                           today=today, success=success, error=error)
+                                           today=str(date.today()), success=success,
+                                           error="No student found with that roll number.")
                 db.execute(
                     "INSERT INTO library_records (student_id, librarian_id, book_title, author, issued_date, due_date) "
-                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    "VALUES (%s, %s, %s, %s, %s, %s)",
                     int(student[0]["id"]), session["user_id"], book_title, author, issued_date, due_date
                 )
                 success = f"Book '{book_title}' issued to {student[0]['username']}!"
@@ -65,12 +82,11 @@ def librarian_library():
             record_id = request.form.get("record_id", "").strip()
             if record_id:
                 db.execute(
-                    "UPDATE library_records SET returned_date = ? WHERE id = ?",
+                    "UPDATE library_records SET returned_date = %s WHERE id = %s",
                     str(date.today()), int(record_id)
                 )
                 success = "Book marked as returned!"
 
-    # All active (not returned) records
     active = db.execute("""
         SELECT l.id, l.book_title, l.author, l.issued_date, l.due_date, l.returned_date,
                u.username AS student_name, g.grade
@@ -81,7 +97,6 @@ def librarian_library():
         ORDER BY l.due_date
     """)
 
-    # All history
     history = db.execute("""
         SELECT l.id, l.book_title, l.author, l.issued_date, l.due_date, l.returned_date,
                u.username AS student_name, g.grade
@@ -92,7 +107,6 @@ def librarian_library():
         LIMIT 50
     """)
 
-    today = str(date.today())
     return render_template("librarian_library.html",
                            students=students, active=active, history=history,
-                           today=today, success=success, error=error)
+                           today=str(date.today()), success=success, error=error)

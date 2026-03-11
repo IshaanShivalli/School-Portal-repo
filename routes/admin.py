@@ -44,12 +44,12 @@ def admin_dashboard():
         p["status"] = status_for(p, now_ts)
 
     counts = {
-        "inbox_unread":   db.execute("SELECT COUNT(*) AS c FROM messages WHERE recipient_id = ? AND is_read = 0", session["user_id"])[0]["c"],
-        "inbox_received": db.execute("SELECT COUNT(*) AS c FROM messages WHERE recipient_id = ?", session["user_id"])[0]["c"],
-        "sent_students":  db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.recipient_id = u.id WHERE m.sender_id = ? AND u.role = 'student'", session["user_id"])[0]["c"],
-        "sent_teachers":  db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.recipient_id = u.id WHERE m.sender_id = ? AND u.role = 'teacher'", session["user_id"])[0]["c"],
-        "sent_news":      db.execute("SELECT COUNT(*) AS c FROM news WHERE sender_id = ?", session["user_id"])[0]["c"],
-        "sent_circulars": db.execute("SELECT COUNT(*) AS c FROM circulars WHERE sender_id = ?", session["user_id"])[0]["c"],
+        "inbox_unread":   db.execute("SELECT COUNT(*) AS c FROM messages WHERE recipient_id = %s AND is_read = 0", session["user_id"])[0]["c"],
+        "inbox_received": db.execute("SELECT COUNT(*) AS c FROM messages WHERE recipient_id = %s", session["user_id"])[0]["c"],
+        "sent_students":  db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.recipient_id = u.id WHERE m.sender_id = %s AND u.role = 'student'", session["user_id"])[0]["c"],
+        "sent_teachers":  db.execute("SELECT COUNT(*) AS c FROM messages m JOIN users u ON m.recipient_id = u.id WHERE m.sender_id = %s AND u.role = 'teacher'", session["user_id"])[0]["c"],
+        "sent_news":      db.execute("SELECT COUNT(*) AS c FROM news WHERE sender_id = %s", session["user_id"])[0]["c"],
+        "sent_circulars": db.execute("SELECT COUNT(*) AS c FROM circulars WHERE sender_id = %s", session["user_id"])[0]["c"],
     }
 
     return render_template(
@@ -89,7 +89,7 @@ def admin_broadcast():
                 error = "Title and body are required."
             else:
                 db.execute(
-                    "INSERT INTO news (sender_id, title, body, attachment) VALUES (?, ?, ?, ?)",
+                    "INSERT INTO news (sender_id, title, body, attachment) VALUES (%s, %s, %s, %s)",
                     session["user_id"], title, body, attachment
                 )
                 success = "News posted!"
@@ -106,7 +106,7 @@ def admin_broadcast():
             else:
                 for g in selected_grades:
                     db.execute(
-                        "INSERT INTO circulars (sender_id, grade, title, body, attachment) VALUES (?, ?, ?, ?, ?)",
+                        "INSERT INTO circulars (sender_id, grade, title, body, attachment) VALUES (%s, %s, %s, %s, %s)",
                         session["user_id"], g, title, body, attachment
                     )
                 success = "Circular sent!"
@@ -119,14 +119,14 @@ def admin_broadcast():
                 if "ALL" in selected_teachers or not selected_teachers:
                     recipients = db.execute("SELECT id FROM users WHERE role = 'teacher'")
                 else:
-                    placeholders = ", ".join(["?"] * len(selected_teachers))
+                    placeholders = ", ".join(["%s"] * len(selected_teachers))
                     recipients = db.execute(
                         f"SELECT id FROM users WHERE role = 'teacher' AND id IN ({placeholders})",
                         *selected_teachers
                     )
                 for r in recipients:
                     db.execute(
-                        "INSERT INTO messages (sender_id, recipient_id, message) VALUES (?, ?, ?)",
+                        "INSERT INTO messages (sender_id, recipient_id, message) VALUES (%s, %s, %s)",
                         session["user_id"], r["id"], message
                     )
                 success = "Message sent to teachers!"
@@ -139,14 +139,14 @@ def admin_broadcast():
                 if "ALL" in request.form.getlist("grades") or not selected_grades:
                     recipients = db.execute("SELECT id FROM users WHERE role = 'student'")
                 else:
-                    placeholders = ", ".join(["?"] * len(selected_grades))
+                    placeholders = ", ".join(["%s"] * len(selected_grades))
                     recipients = db.execute(
                         f"SELECT DISTINCT u.id FROM users u JOIN grades g ON u.id = g.user_id WHERE g.grade IN ({placeholders})",
                         *selected_grades
                     )
                 for r in recipients:
                     db.execute(
-                        "INSERT INTO messages (sender_id, recipient_id, message) VALUES (?, ?, ?)",
+                        "INSERT INTO messages (sender_id, recipient_id, message) VALUES (%s, %s, %s)",
                         session["user_id"], r["id"], message
                     )
                 success = "Message sent to students!"
@@ -164,9 +164,9 @@ def admin_messages():
     messages = db.execute("""
         SELECT m.id, m.message, m.created_at, u.username AS sender
         FROM messages m JOIN users u ON m.sender_id = u.id
-        WHERE m.recipient_id = ? ORDER BY m.created_at DESC
+        WHERE m.recipient_id = %s ORDER BY m.created_at DESC
     """, session["user_id"])
-    db.execute("UPDATE messages SET is_read = 1 WHERE recipient_id = ?", session["user_id"])
+    db.execute("UPDATE messages SET is_read = 1 WHERE recipient_id = %s", session["user_id"])
     return render_template("admin_messages.html", messages=messages)
 
 
@@ -176,7 +176,7 @@ def admin_clear_inbox():
     if guard:
         return guard
 
-    db.execute("DELETE FROM messages WHERE recipient_id = ?", session["user_id"])
+    db.execute("DELETE FROM messages WHERE recipient_id = %s", session["user_id"])
     return redirect(url_for("admin_messages"))
 
 
@@ -188,7 +188,7 @@ def handle_message():
 
     msg_id = request.form.get("msg_id")
     if msg_id:
-        db.execute("UPDATE messages SET is_handled = 1 WHERE id = ?", msg_id)
+        db.execute("UPDATE messages SET is_handled = 1 WHERE id = %s", msg_id)
     return redirect(url_for("admin_messages"))
 
 
@@ -205,7 +205,7 @@ def admin_grades():
             return render_template("admin_grades.html", grades=grades, students=[], error="Invalid grade.")
         students = db.execute("""
             SELECT u.username, g.grade, u.id FROM users u
-            JOIN grades g ON u.id = g.user_id WHERE g.grade = ? ORDER BY u.username
+            JOIN grades g ON u.id = g.user_id WHERE g.grade = %s ORDER BY u.username
         """, selected_grade)
     else:
         students = db.execute("""
@@ -224,20 +224,21 @@ def delete_user():
     username = request.form.get("username")
     if not username:
         return redirect(url_for("admin_dashboard"))
-    user = db.execute("SELECT id, is_admin, role FROM users WHERE username = ?", username)
+
+    user = db.execute("SELECT id, is_admin, role FROM users WHERE username = %s", username)
     if not user or user[0]["is_admin"] == 1:
         return redirect(url_for("admin_dashboard"))
-    uid = user[0]["id"]
+    uid  = user[0]["id"]
     role = user[0]["role"]
 
     if role == "principal":
-        school = db.execute("SELECT id FROM schools WHERE principal_id = ?", uid)
+        school = db.execute("SELECT id FROM schools WHERE principal_id = %s", uid)
         if school:
             school_id = school[0]["id"]
-            users_in_school = db.execute("SELECT id FROM users WHERE school_id = ?", school_id)
+            users_in_school = db.execute("SELECT id FROM users WHERE school_id = %s", school_id)
             user_ids = [u["id"] for u in users_in_school] + [uid]
             if user_ids:
-                placeholders = ", ".join(["?"] * len(user_ids))
+                placeholders = ", ".join(["%s"] * len(user_ids))
                 db.execute(f"DELETE FROM messages WHERE sender_id IN ({placeholders}) OR recipient_id IN ({placeholders})", *user_ids, *user_ids)
                 db.execute(f"DELETE FROM grades WHERE user_id IN ({placeholders})", *user_ids)
                 db.execute(f"DELETE FROM circulars_seen WHERE user_id IN ({placeholders})", *user_ids)
@@ -253,30 +254,30 @@ def delete_user():
                 db.execute(f"DELETE FROM calendar_events WHERE created_by IN ({placeholders})", *user_ids)
                 db.execute(f"DELETE FROM feedback WHERE user_id IN ({placeholders})", *user_ids)
                 db.execute(f"DELETE FROM users WHERE id IN ({placeholders})", *user_ids)
-            db.execute("DELETE FROM schools WHERE id = ?", school_id)
+            db.execute("DELETE FROM schools WHERE id = %s", school_id)
         else:
-            db.execute("DELETE FROM users WHERE id = ?", uid)
+            db.execute("DELETE FROM users WHERE id = %s", uid)
     else:
-        db.execute("DELETE FROM messages WHERE sender_id = ? OR recipient_id = ?", uid, uid)
-        db.execute("DELETE FROM grades WHERE user_id = ?", uid)
-        db.execute("DELETE FROM circulars_seen WHERE user_id = ?", uid)
-        db.execute("DELETE FROM homework_seen WHERE user_id = ?", uid)
-        db.execute("DELETE FROM news_seen WHERE user_id = ?", uid)
-        db.execute("DELETE FROM student_reports WHERE student_id = ? OR sender_id = ?", uid, uid)
-        db.execute("DELETE FROM calendar_events WHERE created_by = ?", uid)
-        db.execute("DELETE FROM feedback WHERE user_id = ?", uid)
-        db.execute("DELETE FROM users WHERE id = ?", uid)
+        db.execute("DELETE FROM messages WHERE sender_id = %s OR recipient_id = %s", uid, uid)
+        db.execute("DELETE FROM grades WHERE user_id = %s", uid)
+        db.execute("DELETE FROM circulars_seen WHERE user_id = %s", uid)
+        db.execute("DELETE FROM homework_seen WHERE user_id = %s", uid)
+        db.execute("DELETE FROM news_seen WHERE user_id = %s", uid)
+        db.execute("DELETE FROM student_reports WHERE student_id = %s OR sender_id = %s", uid, uid)
+        db.execute("DELETE FROM calendar_events WHERE created_by = %s", uid)
+        db.execute("DELETE FROM feedback WHERE user_id = %s", uid)
+        db.execute("DELETE FROM users WHERE id = %s", uid)
     return redirect(url_for("admin_dashboard"))
+
 
 def admin_canteen():
     from app import db
     if not session.get("is_admin"):
-        from flask import abort
         abort(403)
 
     success = ""
     error   = ""
-    DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    DAYS    = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
     if request.method == "POST":
         action = request.form.get("action", "")
@@ -289,14 +290,14 @@ def admin_canteen():
                 error = "All fields are required."
             else:
                 db.execute(
-                    "INSERT INTO canteen_menu (item_name, price, emoji, day_of_week) VALUES (?, ?, ?, ?)",
+                    "INSERT INTO canteen_menu (item_name, price, emoji, day_of_week) VALUES (%s, %s, %s, %s)",
                     item_name, float(price), emoji, day
                 )
                 success = "Menu item added!"
         elif action == "delete":
             item_id = request.form.get("item_id")
             if item_id:
-                db.execute("DELETE FROM canteen_menu WHERE id = ?", int(item_id))
+                db.execute("DELETE FROM canteen_menu WHERE id = %s", int(item_id))
                 success = "Item removed."
 
     menu = db.execute(
@@ -313,7 +314,6 @@ def admin_calendar():
     from app import db
     from datetime import date
     if not session.get("is_admin"):
-        from flask import abort
         abort(403)
 
     success = ""
@@ -328,14 +328,14 @@ def admin_calendar():
                 error = "Title and date are required."
             else:
                 db.execute(
-                    "INSERT INTO calendar_events (created_by, title, description, event_date) VALUES (?, ?, ?, ?)",
+                    "INSERT INTO calendar_events (created_by, title, description, event_date) VALUES (%s, %s, %s, %s)",
                     session["user_id"], title, description, event_date
                 )
                 success = "Event added!"
         elif action == "delete":
             ev_id = request.form.get("event_id")
             if ev_id:
-                db.execute("DELETE FROM calendar_events WHERE id = ?", int(ev_id))
+                db.execute("DELETE FROM calendar_events WHERE id = %s", int(ev_id))
                 success = "Event removed."
 
     events = db.execute(
