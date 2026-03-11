@@ -28,6 +28,12 @@
                 <input type="text" name="school_code" placeholder="School Code">
             </div>
             <div id="principal-fields" style="display:none;">
+                <select name="school_name">
+                    <option value="">Select School</option>
+                    {% for name in school_names %}
+                        <option value="{{ name }}">{{ name }}</option>
+                    {% endfor %}
+                </select>
                 <input type="email" name="email" placeholder="Principal Email">
             </div>
             <div id="teacher-fields" style="display:none;">
@@ -50,6 +56,7 @@
     const departmentInput = teacherFields.querySelector('input[name="department"]');
     const phoneInput = teacherFields.querySelector('input[name="phone"]');
     const emailInput = principalFields.querySelector('input[name="email"]');
+    const schoolNameSelect = principalFields.querySelector('select[name="school_name"]');
     const schoolCodeInput = schoolCodeField.querySelector('input[name="school_code"]');
 
     const toggleTeacherFields = () => {
@@ -60,6 +67,7 @@
         departmentInput.required = isTeacher;
         phoneInput.required = isTeacher;
         principalFields.style.display = isPrincipal ? 'block' : 'none';
+        schoolNameSelect.required = isPrincipal;
         emailInput.required = isPrincipal;
         schoolCodeField.style.display = (isTeacher || isStudent) ? 'block' : 'none';
         schoolCodeInput.required = (isTeacher || isStudent);

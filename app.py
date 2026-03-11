@@ -21,6 +21,9 @@ ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg", "doc", "docx", "txt"}
 IMAGE_EXTENSIONS = {"png", "jpg", "jpeg"}
 VALID_GRADES = {str(i) for i in range(1, 13)}
 VALID_SECTIONS = set("ABCDEFG")
+SCHOOL_NAME_OPTIONS = [
+    s.strip() for s in os.environ.get("SCHOOL_NAME_OPTIONS", "").split(",") if s.strip()
+]
 
 # ── Database connection ───────────────────────────────────────────────────────
 _db_url = os.environ.get("DATABASE_URL", "")

@@ -4,10 +4,13 @@ import os, time
 
 
 def register():
-    from app import db, generate_school_code, send_school_code_email
+    from app import db, generate_school_code, send_school_code_email, SCHOOL_NAME_OPTIONS
 
     if "user_id" in session:
         return redirect(url_for("home"))
+
+    school_names = SCHOOL_NAME_OPTIONS
+    ctx = {"school_names": school_names}
 
     if request.method == "POST":
         username    = request.form.get("username", "").strip()
@@ -18,26 +21,26 @@ def register():
         phone       = request.form.get("phone", "").strip()
         school_code = request.form.get("school_code", "").strip().upper()
         email       = request.form.get("email", "").strip()
-        school_name = f"{username}'s School"
+        school_name = ""
 
         if role not in {"student", "teacher", "admin", "principal"}:
-            return render_template("register.html", error="Please select a valid role.")
+            return render_template("register.html", error="Please select a valid role.", **ctx)
 
         if not username or not password or password != confirm:
-            return render_template("register.html", error="Invalid input or passwords don't match.")
+            return render_template("register.html", error="Invalid input or passwords don't match.", **ctx)
 
         if db.execute("SELECT id FROM users WHERE username = %s", username):
-            return render_template("register.html", error="Username already taken.")
+            return render_template("register.html", error="Username already taken.", **ctx)
 
         school_id    = None
         is_librarian = 0
 
         if role in {"teacher", "student"}:
             if not school_code:
-                return render_template("register.html", error="School code is required.")
+                return render_template("register.html", error="School code is required.", **ctx)
             school = db.execute("SELECT id FROM schools WHERE code = %s", school_code)
             if not school:
-                return render_template("register.html", error="Invalid school code.")
+                return render_template("register.html", error="Invalid school code.", **ctx)
             school_id = school[0]["id"]
 
         if role == "teacher":
@@ -49,25 +52,32 @@ def register():
             ]
             all_teacher_passwords = teacher_passwords + librarian_passwords
             if not all_teacher_passwords:
-                return render_template("register.html", error="Teacher passwords are not configured.")
+                return render_template("register.html", error="Teacher passwords are not configured.", **ctx)
             if password not in all_teacher_passwords:
-                return render_template("register.html", error="Invalid teacher password.")
+                return render_template("register.html", error="Invalid teacher password.", **ctx)
             if not department or not phone:
-                return render_template("register.html", error="Department and phone are required for teachers.")
+                return render_template("register.html", error="Department and phone are required for teachers.", **ctx)
             is_librarian = 1 if password in librarian_passwords else 0
 
         code = None
         if role == "principal":
+            if not school_names:
+                return render_template("register.html", error="School list is not configured.", **ctx)
+            school_name = request.form.get("school_name", "").strip()
+            if not school_name:
+                return render_template("register.html", error="Please select a school.", **ctx)
+            if school_name not in school_names:
+                return render_template("register.html", error="Invalid school selection.", **ctx)
             if not email:
-                return render_template("register.html", error="Email is required for principals.")
+                return render_template("register.html", error="Email is required for principals.", **ctx)
             code = generate_school_code()
             while db.execute("SELECT 1 FROM schools WHERE code = %s", code):
                 code = generate_school_code()
 
         hashed = generate_password_hash(password)
-        db.execute(
+        new_user = db.execute(
             "INSERT INTO users (username, password, is_admin, role, department, phone, email, is_librarian) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
             username, hashed,
             1 if role == "admin" else 0,
             role,
@@ -75,8 +85,7 @@ def register():
             phone if role == "teacher" else None,
             email if role in ("principal", "student") else None,
             is_librarian if role == "teacher" else 0
-        )
-        new_user = db.execute("SELECT id FROM users WHERE username = %s", username)[0]
+        )[0]
 
         if school_id:
             db.execute("UPDATE users SET school_id = %s WHERE id = %s", school_id, new_user["id"])
@@ -88,16 +97,17 @@ def register():
             )
             ok, err = send_school_code_email(email, code, school_name)
             if ok:
-                return render_template("register.html", success="Principal registered. School code sent to your email.")
+                return render_template("register.html", success="Principal registered. School code sent to your email.", **ctx)
             return render_template(
                 "register.html",
                 success=f"Principal registered. School code: {code}",
-                error=f"Email failed - save your code now! ({err})"
+                error=f"Email failed - save your code now! ({err})",
+                **ctx
             )
 
         return redirect(url_for("login"))
 
-    return render_template("register.html")
+    return render_template("register.html", **ctx)
 
 
 def login():
