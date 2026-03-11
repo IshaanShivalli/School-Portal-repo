@@ -69,8 +69,9 @@ def register():
             is_librarian = 0
 
         hashed = generate_password_hash(password)
-        db.execute(
-            "INSERT INTO users (username, password, is_admin, role, department, phone, email, is_librarian) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        new_user = db.execute(
+            "INSERT INTO users (username, password, is_admin, role, department, phone, email, is_librarian) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
             username, hashed,
             1 if role == "admin" else 0,
             role,
@@ -78,8 +79,7 @@ def register():
             phone if role == "teacher" else None,
             email if role in ("principal", "student") else None,
             is_librarian if role == "teacher" else 0
-        )
-        new_user = db.execute("SELECT id FROM users WHERE username = ?", username)[0]
+        )[0]
 
         if school_id:
             db.execute("UPDATE users SET school_id = ? WHERE id = ?", school_id, new_user["id"])

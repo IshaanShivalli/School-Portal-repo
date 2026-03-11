@@ -89,7 +89,8 @@ def student_circulars():
     """, grade)
     for c in circulars:
         db.execute(
-            "INSERT OR IGNORE INTO circulars_seen (user_id, circular_id) VALUES (?, ?)",
+            "INSERT INTO circulars_seen (user_id, circular_id) VALUES (?, ?) "
+            "ON CONFLICT (user_id, circular_id) DO NOTHING",
             session["user_id"], c["id"]
         )
     return render_template("student_circulars.html", circulars=circulars, grade=grade)
@@ -110,7 +111,8 @@ def student_homework():
     """, grade)
     for h in homework:
         db.execute(
-            "INSERT OR IGNORE INTO homework_seen (user_id, homework_id) VALUES (?, ?)",
+            "INSERT INTO homework_seen (user_id, homework_id) VALUES (?, ?) "
+            "ON CONFLICT (user_id, homework_id) DO NOTHING",
             session["user_id"], h["id"]
         )
     return render_template("student_homework.html", homework=homework, grade=grade)

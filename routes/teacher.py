@@ -214,17 +214,12 @@ def teacher_attendance():
         for key, val in request.form.items():
             if key.startswith("status_"):
                 sid = key.replace("status_", "")
-                try:
-                    db.execute(
-                        "INSERT INTO attendance (student_id, marked_by, date, status) VALUES (?, ?, ?, ?) "
-                        "ON CONFLICT(student_id, date) DO UPDATE SET status=excluded.status",
-                        int(sid), session["user_id"], att_date, val
-                    )
-                except Exception:
-                    db.execute(
-                        "INSERT OR REPLACE INTO attendance (student_id, marked_by, date, status) VALUES (?, ?, ?, ?)",
-                        int(sid), session["user_id"], att_date, val
-                    )
+                db.execute(
+                    "INSERT INTO attendance (student_id, marked_by, date, status) VALUES (?, ?, ?, ?) "
+                    "ON CONFLICT (student_id, date) DO UPDATE SET "
+                    "marked_by = EXCLUDED.marked_by, status = EXCLUDED.status",
+                    int(sid), session["user_id"], att_date, val
+                )
             if key.startswith("roll_"):
                 sid = key.replace("roll_", "")
                 roll = val.strip()

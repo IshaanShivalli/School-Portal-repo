@@ -22,13 +22,24 @@ IMAGE_EXTENSIONS = {"png", "jpg", "jpeg"}
 VALID_GRADES = {str(i) for i in range(1, 13)}
 VALID_SECTIONS = set("ABCDEFG")
 
-db = SQL("sqlite:///db.sqlite3")
+# ── Database connection ───────────────────────────────────────────────────────
+_db_url = os.environ.get("DATABASE_URL", "")
+if _db_url.startswith("postgres://"):
+    _db_url = _db_url.replace("postgres://", "postgresql://", 1)
+if not _db_url:
+    raise RuntimeError("DATABASE_URL must be set to a PostgreSQL connection string.")
+if not _db_url.startswith("postgresql://"):
+    raise RuntimeError("DATABASE_URL must start with postgresql://")
+DATABASE_URL = _db_url
+db = SQL(DATABASE_URL)
 
 
 def init_db():
-    db.execute("""
+    pk = "SERIAL PRIMARY KEY"
+
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS schools (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             principal_id INTEGER,
             name TEXT NOT NULL DEFAULT 'Unknown School',
             email TEXT NOT NULL,
@@ -36,9 +47,9 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    db.execute("""
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS news (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             sender_id INTEGER NOT NULL,
             title TEXT NOT NULL,
             body TEXT NOT NULL,
@@ -46,9 +57,9 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    db.execute("""
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS feedback (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             name TEXT NOT NULL,
             role TEXT NOT NULL,
             message TEXT NOT NULL,
@@ -56,9 +67,9 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    db.execute("""
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS circulars (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             sender_id INTEGER NOT NULL,
             grade TEXT NOT NULL,
             title TEXT NOT NULL,
@@ -67,9 +78,9 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    db.execute("""
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS homework (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             sender_id INTEGER NOT NULL,
             grade TEXT NOT NULL,
             title TEXT NOT NULL,
@@ -78,9 +89,9 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    db.execute("""
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             sender_id INTEGER NOT NULL,
             recipient_id INTEGER NOT NULL,
             message TEXT NOT NULL,
@@ -89,27 +100,27 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    db.execute("""
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS circulars_seen (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             user_id INTEGER NOT NULL,
             circular_id INTEGER NOT NULL,
             seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(user_id, circular_id)
         )
     """)
-    db.execute("""
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS homework_seen (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             user_id INTEGER NOT NULL,
             homework_id INTEGER NOT NULL,
             seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(user_id, homework_id)
         )
     """)
-    db.execute("""
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS news_seen (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             user_id INTEGER NOT NULL,
             news_id INTEGER NOT NULL,
             seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -117,38 +128,21 @@ def init_db():
         )
     """)
 
-    cols = {c["name"] for c in db.execute("SELECT name FROM pragma_table_info('users')")}
-    if "is_logged_in" not in cols:
-        db.execute("ALTER TABLE users ADD COLUMN is_logged_in INTEGER DEFAULT 0")
-    if "last_seen" not in cols:
-        db.execute("ALTER TABLE users ADD COLUMN last_seen INTEGER DEFAULT 0")
-    if "role" not in cols:
-        db.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'student'")
-    if "department" not in cols:
-        db.execute("ALTER TABLE users ADD COLUMN department TEXT")
-    if "phone" not in cols:
-        db.execute("ALTER TABLE users ADD COLUMN phone TEXT")
-    if "school_id" not in cols:
-        db.execute("ALTER TABLE users ADD COLUMN school_id INTEGER")
-    if "profile_pic" not in cols:
-        db.execute("ALTER TABLE users ADD COLUMN profile_pic TEXT")
-
-    feedback_cols = {c["name"] for c in db.execute("SELECT name FROM pragma_table_info('feedback')")}
-    if "user_id" not in feedback_cols:
-        db.execute("ALTER TABLE feedback ADD COLUMN user_id INTEGER")
-
-    school_cols = {c["name"] for c in db.execute("SELECT name FROM pragma_table_info('schools')")}
-    if "name" not in school_cols:
-        db.execute("ALTER TABLE schools ADD COLUMN name TEXT DEFAULT 'Unknown School'")
-
-    grade_cols = {c["name"] for c in db.execute("SELECT name FROM pragma_table_info('grades')")}
-    if "roll_number" not in grade_cols:
-        db.execute("ALTER TABLE grades ADD COLUMN roll_number TEXT")
+    db.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_logged_in INTEGER DEFAULT 0")
+    db.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen INTEGER DEFAULT 0")
+    db.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'student'")
+    db.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS department TEXT")
+    db.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT")
+    db.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS school_id INTEGER")
+    db.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_pic TEXT")
+    db.execute("ALTER TABLE feedback ADD COLUMN IF NOT EXISTS user_id INTEGER")
+    db.execute("ALTER TABLE schools ADD COLUMN IF NOT EXISTS name TEXT DEFAULT 'Unknown School'")
+    db.execute("ALTER TABLE grades ADD COLUMN IF NOT EXISTS roll_number TEXT")
 
     # ── NEW TABLES ──────────────────────────────────────────────────────────
-    db.execute("""
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS results (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             student_id INTEGER NOT NULL,
             sender_id INTEGER NOT NULL,
             exam_name TEXT NOT NULL,
@@ -160,9 +154,9 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    db.execute("""
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS attendance (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             student_id INTEGER NOT NULL,
             marked_by INTEGER NOT NULL,
             date TEXT NOT NULL,
@@ -171,9 +165,9 @@ def init_db():
             UNIQUE(student_id, date)
         )
     """)
-    db.execute("""
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS library_records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             student_id INTEGER NOT NULL,
             librarian_id INTEGER NOT NULL,
             book_title TEXT NOT NULL,
@@ -184,9 +178,9 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    db.execute("""
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS canteen_menu (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             item_name TEXT NOT NULL,
             price REAL NOT NULL,
             emoji TEXT,
@@ -194,9 +188,9 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    db.execute("""
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS calendar_events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             created_by INTEGER NOT NULL,
             title TEXT NOT NULL,
             description TEXT,
@@ -204,9 +198,9 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    db.execute("""
+    db.execute(f"""
         CREATE TABLE IF NOT EXISTS student_reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id {pk},
             student_id INTEGER NOT NULL,
             sender_id INTEGER NOT NULL,
             report_type TEXT NOT NULL,
@@ -218,11 +212,8 @@ def init_db():
     """)
 
     # librarian flag on users
-    u_cols = {c["name"] for c in db.execute("SELECT name FROM pragma_table_info('users')")}
-    if "is_librarian" not in u_cols:
-        db.execute("ALTER TABLE users ADD COLUMN is_librarian INTEGER DEFAULT 0")
-    if "email" not in u_cols:
-        db.execute("ALTER TABLE users ADD COLUMN email TEXT")
+    db.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_librarian INTEGER DEFAULT 0")
+    db.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT")
 
 
 init_db()
@@ -497,7 +488,7 @@ def school_news():
     if session.get("role") in ("student", "teacher") and news:
         for n in news:
             db.execute(
-                "INSERT OR IGNORE INTO news_seen (user_id, news_id) VALUES (?, ?)",
+                "INSERT INTO news_seen (user_id, news_id) VALUES (?, ?) ON CONFLICT (user_id, news_id) DO NOTHING",
                 session["user_id"], n["id"]
             )
     return render_template("school_news.html", news=news)
