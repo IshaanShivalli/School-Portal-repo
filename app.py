@@ -294,7 +294,7 @@ def send_school_code_email(to_email, code, school_name="your school"):
     host     = os.environ.get("SMTP_HOST")
     port     = int(os.environ.get("SMTP_PORT", "0") or 0)
     user     = os.environ.get("SMTP_USER")
-    password = os.environ.get("SMTP_PASS")
+    password = (os.environ.get("SMTP_PASS") or "").replace(" ", "")
     sender   = os.environ.get("SMTP_FROM") or user
 
     if not host or not port or not sender:
@@ -323,7 +323,7 @@ def send_generic_email(to_email, subject, body, from_name="SchoolBridge"):
     host     = os.environ.get("SMTP_HOST")
     port     = int(os.environ.get("SMTP_PORT", "0") or 0)
     user     = os.environ.get("SMTP_USER")
-    password = os.environ.get("SMTP_PASS")
+    password = (os.environ.get("SMTP_PASS") or "").replace(" ", "")
     sender   = os.environ.get("SMTP_FROM") or user
     if not host or not port or not sender:
         return False, "Email service not configured."

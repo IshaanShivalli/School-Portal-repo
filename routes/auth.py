@@ -92,7 +92,7 @@ def register():
             return render_template(
                 "register.html",
                 success=f"Principal registered. School code: {code}",
-                error="Email failed - save your code now!"
+                error=f"Email failed - save your code now! ({err})"
             )
 
         return redirect(url_for("login"))
