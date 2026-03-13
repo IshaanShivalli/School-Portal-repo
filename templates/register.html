@@ -24,16 +24,37 @@
                 <option value="principal">Principal</option>
                 <option value="admin">Admin</option>
             </select>
+            <div id="location-fields" style="display:none;">
+                <select name="country">
+                    <option value="">Select Country</option>
+                    {% for c in country_options %}
+                        <option value="{{ c }}">{{ c }}</option>
+                    {% endfor %}
+                </select>
+                <select name="state">
+                    <option value="">Select State</option>
+                    {% for s in state_options %}
+                        <option value="{{ s }}">{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
             <div id="school-code-field" style="display:none;">
                 <input type="text" name="school_code" placeholder="School Code">
             </div>
             <div id="principal-fields" style="display:none;">
-                <select name="school_name">
-                    <option value="">Select School</option>
-                    {% for name in school_names %}
-                        <option value="{{ name }}">{{ name }}</option>
+                <select name="school_type">
+                    <option value="">Select School Type</option>
+                    <option value="government">Government</option>
+                    <option value="private">Private</option>
+                    <option value="other">Other</option>
+                </select>
+                <select name="school_state">
+                    <option value="">Select State</option>
+                    {% for s in state_options %}
+                        <option value="{{ s }}">{{ s }}</option>
                     {% endfor %}
                 </select>
+                <input type="text" name="school_name" placeholder="School Name">
                 <input type="email" name="email" placeholder="Principal Email">
             </div>
             <div id="teacher-fields" style="display:none;">
@@ -53,21 +74,32 @@
     const teacherFields = document.getElementById('teacher-fields');
     const principalFields = document.getElementById('principal-fields');
     const schoolCodeField = document.getElementById('school-code-field');
+    const locationFields = document.getElementById('location-fields');
     const departmentInput = teacherFields.querySelector('input[name="department"]');
     const phoneInput = teacherFields.querySelector('input[name="phone"]');
     const emailInput = principalFields.querySelector('input[name="email"]');
-    const schoolNameSelect = principalFields.querySelector('select[name="school_name"]');
+    const countrySelect = locationFields.querySelector('select[name="country"]');
+    const stateSelect = locationFields.querySelector('select[name="state"]');
+    const schoolTypeSelect = principalFields.querySelector('select[name="school_type"]');
+    const schoolStateSelect = principalFields.querySelector('select[name="school_state"]');
+    const schoolNameInput = principalFields.querySelector('input[name="school_name"]');
     const schoolCodeInput = schoolCodeField.querySelector('input[name="school_code"]');
 
     const toggleTeacherFields = () => {
         const isTeacher = roleSelect.value === 'teacher';
         const isStudent = roleSelect.value === 'student';
         const isPrincipal = roleSelect.value === 'principal';
+        const isAdmin = roleSelect.value === 'admin';
         teacherFields.style.display = isTeacher ? 'block' : 'none';
         departmentInput.required = isTeacher;
         phoneInput.required = isTeacher;
+        locationFields.style.display = isAdmin ? 'none' : 'block';
+        countrySelect.required = !isAdmin;
+        stateSelect.required = !isAdmin;
         principalFields.style.display = isPrincipal ? 'block' : 'none';
-        schoolNameSelect.required = isPrincipal;
+        schoolTypeSelect.required = isPrincipal;
+        schoolStateSelect.required = isPrincipal;
+        schoolNameInput.required = isPrincipal;
         emailInput.required = isPrincipal;
         schoolCodeField.style.display = (isTeacher || isStudent) ? 'block' : 'none';
         schoolCodeInput.required = (isTeacher || isStudent);
