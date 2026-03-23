@@ -50,14 +50,19 @@ def ensure_tables(cur):
         """
         CREATE TABLE IF NOT EXISTS catalog_schools (
             id SERIAL PRIMARY KEY,
+            country TEXT,
             school_type TEXT NOT NULL,
             state TEXT NOT NULL,
+            district TEXT,
             name TEXT NOT NULL
         )
         """
     )
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_catalog_schools_type_state ON catalog_schools (school_type, state)")
-    cur.execute("CREATE UNIQUE INDEX IF NOT EXISTS uniq_catalog_schools ON catalog_schools (school_type, state, name)")
+    cur.execute("ALTER TABLE catalog_schools ADD COLUMN IF NOT EXISTS country TEXT")
+    cur.execute("ALTER TABLE catalog_schools ADD COLUMN IF NOT EXISTS district TEXT")
+    cur.execute("UPDATE catalog_schools SET country = 'India' WHERE country IS NULL")
+    cur.execute("UPDATE catalog_schools SET district = 'Unknown District' WHERE district IS NULL")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_catalog_schools_lookup ON catalog_schools (country, state, district, school_type)")
 
 
 def main():
@@ -86,7 +91,7 @@ def main():
                 if args.reset:
                     cur.execute("TRUNCATE catalog_schools")
 
-                cur.execute("CREATE TEMP TABLE temp_catalog_schools (school_type TEXT, state TEXT, name TEXT)")
+                cur.execute("CREATE TEMP TABLE temp_catalog_schools (country TEXT, school_type TEXT, state TEXT, district TEXT, name TEXT)")
 
                 temp_path = None
                 try:
@@ -95,23 +100,24 @@ def main():
                         writer = csv.writer(tmp)
                         with open(csv_path, newline="", encoding="utf-8") as fh:
                             reader = csv.DictReader(fh)
-                            if "schname" not in reader.fieldnames or "stname" not in reader.fieldnames:
-                                raise ValueError("CSV missing required columns: schname, stname")
+                            if "schname" not in reader.fieldnames or "stname" not in reader.fieldnames or "dtname" not in reader.fieldnames:
+                                raise ValueError("CSV missing required columns: schname, stname, dtname")
                             for idx, row in enumerate(reader, start=1):
                                 name = (row.get("schname") or "").strip()
                                 state = (row.get("stname") or "").strip()
+                                district = (row.get("dtname") or "").strip()
                                 management = (row.get("management") or "").strip()
                                 if not name or not state:
                                     continue
                                 school_type = normalize_school_type(management)
-                                writer.writerow([school_type, state, name])
+                                writer.writerow(["India", school_type, state, district or "Unknown District", name])
                                 inserted += 1
                                 if args.limit and idx >= args.limit:
                                     break
 
                     with open(temp_path, "r", encoding="utf-8") as tmp_in:
                         cur.copy_expert(
-                            "COPY temp_catalog_schools (school_type, state, name) FROM STDIN WITH (FORMAT CSV)",
+                            "COPY temp_catalog_schools (country, school_type, state, district, name) FROM STDIN WITH (FORMAT CSV)",
                             tmp_in,
                         )
                 finally:
@@ -119,9 +125,14 @@ def main():
                         os.remove(temp_path)
 
                 cur.execute(
-                    "INSERT INTO catalog_schools (school_type, state, name) "
-                    "SELECT DISTINCT school_type, state, name FROM temp_catalog_schools "
-                    "ON CONFLICT (school_type, state, name) DO NOTHING"
+                    "INSERT INTO catalog_schools (country, school_type, state, district, name) "
+                    "SELECT DISTINCT t.country, t.school_type, t.state, t.district, t.name "
+                    "FROM temp_catalog_schools t "
+                    "WHERE NOT EXISTS ("
+                    "  SELECT 1 FROM catalog_schools c "
+                    "  WHERE c.country = t.country AND c.state = t.state AND c.district = t.district "
+                    "    AND c.school_type = t.school_type AND c.name = t.name"
+                    ")"
                 )
 
         print(f"Imported ~{inserted} rows into catalog_schools")

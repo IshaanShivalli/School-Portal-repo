@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from functools import wraps, lru_cache
 from dotenv import load_dotenv
-import os, time, random, string, smtplib, csv, json
+import os, time, random, string, smtplib
 from email.message import EmailMessage
 
 load_dotenv()
@@ -23,123 +23,7 @@ VALID_GRADES = {str(i) for i in range(1, 13)}
 VALID_SECTIONS = set("ABCDEFG")
 
 
-def load_school_catalog():
-    data_dir = os.path.join(os.path.dirname(__file__), "data")
-    files = {
-        "government": os.path.join(data_dir, "government_schools.csv"),
-        "private": os.path.join(data_dir, "private_schools.csv"),
-    }
-    city_to_state = {
-        "Agra": "Uttar Pradesh",
-        "Ahmedabad": "Gujarat",
-        "Amritsar": "Punjab",
-        "Bengaluru": "Karnataka",
-        "Bhopal": "Madhya Pradesh",
-        "Bhubaneswar": "Odisha",
-        "Chandigarh": "Chandigarh",
-        "Chennai": "Tamil Nadu",
-        "Dehradun": "Uttarakhand",
-        "Guwahati": "Assam",
-        "Hyderabad": "Telangana",
-        "Indore": "Madhya Pradesh",
-        "Jaipur": "Rajasthan",
-        "Jalandhar": "Punjab",
-        "Jammu": "Jammu and Kashmir",
-        "Kanpur": "Uttar Pradesh",
-        "Kolkata": "West Bengal",
-        "Lucknow": "Uttar Pradesh",
-        "Ludhiana": "Punjab",
-        "Mumbai": "Maharashtra",
-        "Nagpur": "Maharashtra",
-        "New Delhi": "Delhi",
-        "Patna": "Bihar",
-        "Prayagraj": "Uttar Pradesh",
-        "Pune": "Maharashtra",
-        "Ranchi": "Jharkhand",
-        "Shimla": "Himachal Pradesh",
-        "Srinagar": "Jammu and Kashmir",
-        "Varanasi": "Uttar Pradesh",
-    }
-    catalog = {"government": {}, "private": {}}
-    all_names = []
-
-    for school_type, path in files.items():
-        if not os.path.exists(path):
-            continue
-        with open(path, newline="", encoding="utf-8") as fh:
-            reader = csv.DictReader(fh)
-            for row in reader:
-                name = (row.get("school_name") or "").strip()
-                if not name:
-                    continue
-                city = name.split(",")[-1].strip()
-                state = city_to_state.get(city, "Unknown State")
-                bucket = catalog[school_type].setdefault(state, [])
-                bucket.append(name)
-                all_names.append(name)
-
-    for school_type in catalog:
-        for state in catalog[school_type]:
-            catalog[school_type][state] = sorted(set(catalog[school_type][state]))
-
-    all_names = sorted(set(all_names))
-    if not all_names:
-        all_names = [
-            s.strip() for s in os.environ.get("SCHOOL_NAME_OPTIONS", "").split(",") if s.strip()
-        ]
-        if all_names:
-            catalog = {"government": {"All States": sorted(all_names)}, "private": {"All States": []}}
-
-    return catalog, all_names
-
-
-def load_udise_states():
-    path = os.path.join(os.path.dirname(__file__), "100_prof1.csv")
-    cache_path = os.path.join(os.path.dirname(__file__), "data", "udise_states.json")
-    if os.path.exists(cache_path):
-        try:
-            with open(cache_path, encoding="utf-8") as fh:
-                cached = json.load(fh)
-            if isinstance(cached, list) and cached:
-                return cached
-        except Exception:
-            pass
-    if not os.path.exists(path):
-        return []
-    states = set()
-    with open(path, newline="", encoding="utf-8") as fh:
-        reader = csv.DictReader(fh)
-        for row in reader:
-            state = (row.get("state") or "").strip()
-            if state:
-                states.add(state)
-    states = sorted(states)
-    try:
-        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-        with open(cache_path, "w", encoding="utf-8") as fh:
-            json.dump(states, fh, ensure_ascii=True, indent=2)
-    except Exception:
-        pass
-    return states
-
-
 COUNTRY_OPTIONS = ["India"]
-
-
-@lru_cache(maxsize=1)
-def get_state_options():
-    rows = db.execute("SELECT name FROM catalog_states ORDER BY name")
-    return [r["name"] for r in rows]
-
-
-@lru_cache(maxsize=1)
-def get_school_catalog():
-    rows = db.execute("SELECT school_type, state, name FROM catalog_schools ORDER BY school_type, state, name")
-    catalog = {}
-    for row in rows:
-        bucket = catalog.setdefault(row["school_type"], {})
-        bucket.setdefault(row["state"], []).append(row["name"])
-    return catalog
 
 # ── Database connection ───────────────────────────────────────────────────────
 _db_url = os.environ.get("DATABASE_URL", "")
@@ -528,8 +412,7 @@ def add_header(response):
 
 # ── Routes (imported from separate files, registered on app directly) ─────────
 
-from routes.auth      import (register, login, logout, home, settings, profile_view,
-                               school_catalog_types, school_catalog_states, school_catalog_schools)
+from routes.auth      import (register, login, logout, home, settings, profile_view)
 from routes.student   import (send_request, student_inbox, clear_inbox,
                                student_circulars, student_homework,
                                student_results, student_attendance,
@@ -551,9 +434,6 @@ app.add_url_rule("/logout",               "logout",               logout)
 app.add_url_rule("/home",                 "home",                 home,                 methods=["GET", "POST"])
 app.add_url_rule("/settings",             "settings",             settings,             methods=["GET", "POST"])
 app.add_url_rule("/profile/<int:user_id>", "profile_view",        profile_view)
-app.add_url_rule("/api/school_catalog/types",   "school_catalog_types",   school_catalog_types)
-app.add_url_rule("/api/school_catalog/states",  "school_catalog_states",  school_catalog_states)
-app.add_url_rule("/api/school_catalog/schools", "school_catalog_schools", school_catalog_schools)
 
 app.add_url_rule("/send_request",         "send_request",         send_request,         methods=["GET", "POST"])
 app.add_url_rule("/student_inbox",        "student_inbox",        student_inbox)

@@ -1,4 +1,4 @@
-﻿from flask import render_template, request, redirect, url_for, session, jsonify
+from flask import render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import os, time
 
@@ -8,25 +8,18 @@ def register():
         db,
         generate_school_code,
         send_school_code_email,
-        get_school_catalog,
-        get_state_options,
-        COUNTRY_OPTIONS,
     )
 
     if "user_id" in session:
         return redirect(url_for("home"))
 
-    state_options = get_state_options()
-    ctx = {
-        "country_options": COUNTRY_OPTIONS,
-        "state_options": state_options,
-    }
+    ctx = {}
 
     if request.method == "POST":
         username    = request.form.get("username", "").strip()
         password    = request.form.get("password", "")
         confirm     = request.form.get("confirm", "")
-        role        = request.form.get("role", "").strip()
+        role        = request.form.get("role", "").strip().lower()
         department  = request.form.get("department", "").strip()
         phone       = request.form.get("phone", "").strip()
         school_code = request.form.get("school_code", "").strip().upper()
@@ -36,6 +29,7 @@ def register():
         school_name = ""
         school_type = ""
         school_state = ""
+        school_district = ""
 
         if role not in {"student", "teacher", "admin", "principal"}:
             return render_template("register.html", error="Please select a valid role.", **ctx)
@@ -52,10 +46,6 @@ def register():
         if role != "admin":
             if not country or not state:
                 return render_template("register.html", error="Country and state are required.", **ctx)
-            if country not in COUNTRY_OPTIONS:
-                return render_template("register.html", error="Invalid country selection.", **ctx)
-            if state not in state_options:
-                return render_template("register.html", error="Invalid state selection.", **ctx)
 
         if role in {"teacher", "student"}:
             if not school_code:
@@ -83,15 +73,14 @@ def register():
 
         code = None
         if role == "principal":
-            school_type = request.form.get("school_type", "").strip()
-            school_state = request.form.get("school_state", "").strip()
+            school_type = request.form.get("school_type", "").strip().lower()
+            school_state = request.form.get("state", "").strip()
+            school_district = request.form.get("district", "").strip()
             school_name = request.form.get("school_name", "").strip()
-            if not school_type or not school_state or not school_name:
-                return render_template("register.html", error="Please select school type, state, and school.", **ctx)
+            if not school_type or not school_state or not school_district or not school_name:
+                return render_template("register.html", error="Please select school type, state, district, and school.", **ctx)
             if school_type not in {"government", "private", "other"}:
                 return render_template("register.html", error="Invalid school type.", **ctx)
-            if school_state not in state_options:
-                return render_template("register.html", error="Invalid school state.", **ctx)
             if not email:
                 return render_template("register.html", error="Email is required for principals.", **ctx)
             code = generate_school_code()
@@ -99,9 +88,9 @@ def register():
                 code = generate_school_code()
 
         hashed = generate_password_hash(password)
-        new_user = db.execute(
+        db.execute(
             "INSERT INTO users (username, password, is_admin, role, department, phone, email, is_librarian) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
             username, hashed,
             1 if role == "admin" else 0,
             role,
@@ -109,7 +98,11 @@ def register():
             phone if role == "teacher" else None,
             email if role in ("principal", "student") else None,
             is_librarian if role == "teacher" else 0
-        )[0]
+        )
+        new_user_row = db.execute("SELECT id FROM users WHERE username = %s", username)
+        new_user = new_user_row[0] if new_user_row else None
+        if not new_user:
+            return render_template("register.html", error="Failed to create user.", **ctx)
 
         if school_id:
             db.execute("UPDATE users SET school_id = %s WHERE id = %s", school_id, new_user["id"])
@@ -120,9 +113,10 @@ def register():
                 new_user["id"], school_name, email, code
             )
             db.execute(
-                "INSERT INTO catalog_schools (school_type, state, name) VALUES (%s, %s, %s) "
-                "ON CONFLICT (school_type, state, name) DO NOTHING",
-                school_type, school_state, school_name
+                "INSERT INTO catalog_schools (country, state, district, school_type, name) "
+                "VALUES (%s, %s, %s, %s, %s) "
+                "ON CONFLICT (country, state, district, school_type, name) DO NOTHING",
+                country, school_state, school_district, school_type, school_name
             )
             ok, err = send_school_code_email(email, code, school_name)
             if ok:
@@ -137,27 +131,6 @@ def register():
         return redirect(url_for("login"))
 
     return render_template("register.html", **ctx)
-
-
-def school_catalog_types():
-    from app import get_school_catalog
-    types = sorted(get_school_catalog().keys())
-    return jsonify({"types": types})
-
-
-def school_catalog_states():
-    from app import get_school_catalog
-    school_type = request.args.get("type", "").strip()
-    states = sorted(get_school_catalog().get(school_type, {}).keys())
-    return jsonify({"states": states})
-
-
-def school_catalog_schools():
-    from app import get_school_catalog
-    school_type = request.args.get("type", "").strip()
-    state = request.args.get("state", "").strip()
-    schools = get_school_catalog().get(school_type, {}).get(state, [])
-    return jsonify({"schools": schools})
 
 
 def login():
